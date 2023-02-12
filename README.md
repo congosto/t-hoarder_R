@@ -214,7 +214,7 @@ Puede hacerse de dos formas:
 
 Ejemplo de los tweets y el impacto de la Embajada rusa
 
-query -\> from:@EmbajadaRusaES OR to:
+query -\> from:EmbajadaRusaES OR to:EmbajadaRusaES OR retweets_of:EmbajadaRusaES OR url:twitter.com/EmbajadaRusaES
 
 #### Summary
 
