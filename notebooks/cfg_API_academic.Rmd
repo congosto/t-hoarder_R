@@ -1,0 +1,119 @@
+---
+title: "configuración de la API académica"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup, 	echo = TRUE,message = FALSE,	warning = FALSE,include=FALSE, cache = FALSE}
+
+require("knitr")
+## setting working directory
+opts_knit$set(root.dir = "./")
+```
+
+## Entorno de trabajo
+
+Estos notebooks trabajan con esta estructura de directorios
+
+    dir_raiz ----+-----data      # Se guardan los datos, cada dataset en un directorio independiente
+                 |
+                 +-----keys      # se guardan los ficheros con las claves de acceso. 
+                 |
+                 +-----notebooks # Se guardan los notebooh en R
+                 
+
+## APIs de Twitter
+
+Twitter ofrece desde el inicio de su creación un conjunto de **APIs** (**A**plication **P**rogramming **I**nterface) que permiten acceder mediante programas a sus datos. Con el tiempo han ido apareciendo nuevas APIs según las necesidades de acceso a la información, algunas gratis y otras de pago. También han ido evolucionando las versiones. Actualmente conviven la **V1.1** y la **V2**.
+
+Las APIs gratuitas que se usan para descargar datos son la **API Standard**(V1.1) y la **API Académica**(V2). Para la primera no se requiere ningún permiso, pero para la segunda hay que solicitar el acceso y está reservada a investigadores académicos.
+
+Esta descarga utiliza la **API Académica (V2)** que es accesible solo a académicos.
+
+## Credenciales de acceso a la API Académica
+
+Cuando twitter concede el acceso a la API Académica proporciona una **app**. Acedemos a ella desde el [Developer portal](https://developer.twitter.com/). En el caso que no la hubiera creado, la crearemos desde este portal.
+
+Una vez creada, deberemos tener algo parecido a esto:
+
+![Developer portal](https://github.com/congosto/congosto.github.io/raw/master/developer_portal.jpg).
+
+El acceso a las claves de la app se realiza desde el developer portal, pulsando en la llave.
+
+![baeren token](https://github.com/congosto/congosto.github.io/raw/master/keys_academicas.jpg)
+
+La clave que vamos a usar es **bearer token**. La primera vez el valor es visible, lo copiaremos y lo pegaremos en un fichero de texto plano cuidando que no haya espacios ni tabulaciones. Es mejor usar la opción de copia que ofrece el portal.
+
+-   En Windows podemos usar el editor **bloc de notas**
+-   En mac **TextEdit**. Escribir un fichero de texto plano sin formato con la extensión .txt no es trivial. [aquí una manera de hacerlo](https://www.cristianmonroy.com/2019/05/aprende-a-crear-archivos-txt-en-mac.html)
+
+Salvaremos el fichero con la extensión .txt en el directorio keys,
+
+Si por algún error no se copiara la clave, se puede regenerar y volver a repetir el proceso de copia y pega en el editor de texto plano.
+
+**Atención usuarios de Windows** : comprobar que están visibles las extensiones de los ficheros (por defecto las esconde) [como hacer visibles las extensiones de los ficheros](https://support.microsoft.com/es-es/windows/extensiones-de-nombre-de-archivo-comunes-en-windows-da4a4430-8e76-89c5-59f7-1cdbbc75cb01)
+
+## Importamos librerias
+
+```{r libraries}
+if (!"academictwitteR" %in% installed.packages()) {install.packages("academictwitteR")}
+if (!"svDialogs" %in% installed.packages()) {install.packages("svDialogs")}
+library(academictwitteR)  # Interfaz con API Twitter Académiva V2
+library(svDialogs)        # Cuadros de diálogo y formularios
+
+```
+
+## Importamos funciones
+
+```{r functions}
+source ("share_functions.R")              # Funciones generales
+
+```
+
+## Entorno por defecto
+
+```{r environment}
+## Entorno por defecto. No tocar salvo que se quiera usar otro entorno
+name_Key_file <- get_key_file()
+keys_path <- "../keys/"  # Directorio de claves
+key_file <- paste0(keys_path,name_Key_file)
+default_key_file <- paste0(keys_path,"key_academic_default.txt")
+temporal_file <- "tmp"
+```
+
+## Autenticación en OAuth
+
+```{r authentication}
+if (file.exists(temporal_file)) {
+ unlink(temporal_file, recursive = TRUE)
+ cat("The directory is deleted")
+}
+if (file.exists(key_file)){
+  keys <- read.csv (file = key_file, header = FALSE) # Leo la clave
+}else {
+   stop ("the key file does not exist")
+}
+
+
+```
+
+## Test key
+
+```{r}
+# Descargamos los tweets para ver que funciona la clave
+tweets <- get_all_tweets(
+  query = "elon musk",
+  start_tweets = "2006-03-21T00:00:00z", # Fecha de creación de Twitter,
+  end_tweets =  "2022-10-28T00:00:00z", # Fecha de compa de Twitter por Elon Musk,
+  n = 10,
+  bind_tweets = TRUE,
+  data_path = temporal_file,
+  bearer_token = keys[1,],
+  context_annotations = TRUE
+)
+unlink(default_key_file)
+file.copy(from= key_file, to= default_key_file) # Creo el fichero de claves por defecto
+print ("The key works correctly")
+
+```

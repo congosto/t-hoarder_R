@@ -1,0 +1,129 @@
+---
+title: "configuración de la API Standard V1.1"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup, 	echo = TRUE,message = FALSE,	warning = FALSE,include=FALSE, cache = FALSE}
+
+require("knitr")
+## setting working directory
+opts_knit$set(root.dir = "./")
+```
+
+## Entorno de trabajo
+
+Estos notebooks trabajan con esta estructura de directorios
+
+    dir_raiz ----+-----data      # Se guardan los datos, cada dataset en un directorio independiente
+                 |
+                 +-----keys      # se guardan los ficheros con las claves de acceso. 
+                 |
+                 +-----notebooks # Se guardan los notebooh en R
+                 
+                 
+
+## APIs de Twitter
+
+Twitter ofrece desde el inicio de su creación un conjunto de **APIs** (**A**plication **P**rogramming **I**nterface) que permiten acceder mediante programas a sus datos. Con el tiempo han ido apareciendo nuevas APIs según las necesidades de acceso a la información, algunas gratis y otras de pago. También han ido evolucionando las versiones. Actualmente conviven la **V1.1** y la **V2**.
+
+Las APIs gratuitas que se usan para descargar datos son la **API Standard**(V1.1) y la **API Académica**(V2). Para la primera no se requiere ningún permiso, pero para la segunda hay que solicitar el acceso y está reservada a investigadores académicos.
+
+Esta descarga utiliza la **API Standard (V1.1)** que es accesible a todo el mundo.
+
+## Credenciales de acceso a la API Standard
+
+A las APIs se accede mediante un protocolo OAuth (**O**pen **Auth**orization). Se trata de un protocolo para permitir la autorización de un servicio a otro sin compartir las credenciales de usuario reales, como un nombre de usuario y contraseña.
+
+Para acceder a las APIs es necesario crear una **app** de la que se obtendrán las claves **consumer_key**, **consumer_secret** y **Bearer Token**. Con estas claves existen dos métodos de acceso:
+
+-   **Modo aplicación**: Solo hay que usar la clave **Bearer Token**. Con esta opción solo se pueden hacer consultas para descargar tweets.
+-   **Modo usuario**: Es necesario crear un token de usuario con las claves de la app **consumer_key** y **consumer_secret**. Cuando el usuario da permiso a la aplicación, se generarán las credenciales **access_token** y **access_secret**
+
+Desde la creación de la **API V2** ya no es posible crear aplicaciones nuevas, por lo tanto hay que utilizar una app ya creada. Con este ejemplo se pone a disposición una app y un programa en python para crear un token con un usuario.
+
+El método de acceso a las APIs en este ejemplo será **Modo usuario**
+
+### Crear credenciales
+
+Para obtener las credenciales que nos permitan trabajar en **Modo usuario** usaremos el script [python make_token_Twitter.ipynb](https://github.com/congosto/token_API_V1.1/blob/main/make_token_Twitter.ipynb) disponible en github. Este script se puede ejecutar en el [entorno colab de google](https://colab.research.google.com/).
+
+![guía para crear credenciales](https://github.com/congosto/congosto.github.io/raw/master/crear_credenciales.jpg)
+
+Descargamos el fichero de claves que hemos generado con make_token_Twitter.ipynb y lo guaramos en el directorio keys
+
+**Este proceso solo hay que hacerlo una vez**
+
+## Importamos librerías y funciones
+
+```{r libraries}
+if (!"rtweet" %in% installed.packages()) {install.packages("rtweet")}
+if (!"tidyverse" %in% installed.packages()) {install.packages("tidyverse")}
+if (!"svDialogs" %in% installed.packages()) {install.packages("svDialogs")}
+library(rtweet)    # Interfaz con API Twitter V1.1
+library(tidyverse)        # Manejo de datos y gráficas
+library(svDialogs) # Cuadros de diálogo y formularios
+```
+
+## Importamos funciones
+
+```{r functions}
+source ("share_functions.R")              # Funciones generales
+source ("share_functions_API_standard.R") # Funciones para la API standard
+```
+
+## Entorno por defecto
+
+```{r environment}
+# Entorno por defecto. No tocar salvo que se quiera usar otro entorno
+name_Key_file <- get_key_file()
+keys_path <- "../keys/" # Directorio de claves
+key_file <- paste0(keys_path,name_Key_file)
+default_key_file <- paste0(keys_path,"key_standard_default.txt")
+```
+
+## Autenticación en OAuth
+
+```{r authentication, message=FALSE}
+#key app
+if (file.exists(key_file)){
+  keys_app_file="https://raw.githubusercontent.com/congosto/t-hoarder_kit/master/keys/taller_datos.key" 
+  keys_app = read_csv(keys_app_file)
+  keys_user <- read.csv (key_file, header = FALSE)
+
+  consumer_key <- keys_app$key1[1]
+  consumer_secret <- keys_app$key2[1]
+  access_token <- keys_user[1,]
+  access_secret <- keys_user[2,]
+
+  token <- rtweet_bot(
+    api_key = consumer_key,
+    api_secret = consumer_secret,
+    access_token = access_token,
+    access_secret = access_secret
+  )
+}else{
+   stop ("the key file does not exist")
+ }
+```
+
+## Test key
+
+```{r search_tweets, message=FALSE, include=FALSE}
+# Descargamos los tweets para ver que funciona la clave
+tweets <- search_tweets(
+  q = "elon musk",
+  n = 10,
+  type = "recent",
+  retryonratelimit = TRUE,
+  include_rts = TRUE,
+  geocode = NULL,
+  max_id = NULL,
+  parse = TRUE,
+  token = token
+)
+unlink(default_key_file)
+file.copy(from= key_file, to= default_key_file) # Creo el fichero de claves por defecto
+print ("The key works correctly")
+```

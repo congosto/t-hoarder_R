@@ -1,0 +1,173 @@
+---
+title: "Generar fichero gdf para Gephi"
+output:
+  html_document:
+    df_print: paged
+params:
+    dataset_name : "xxxxxxxxxxx"            # Nombre del dataset
+---
+
+```{r setup, 	echo = TRUE,message = FALSE,	warning = FALSE,include=FALSE, cache = FALSE}
+
+require("knitr")
+## setting working directory
+opts_knit$set(root.dir = "./")
+```
+
+## Entorno de trabajo
+
+Estos notebooks trabajan con esta estructura de directorios
+
+    dir_raiz ----+-----data      # Se guardan los datos, cada dataset en un directorio independiente
+                 |
+                 +-----keys      # se guardan los ficheros con las claves de acceso. 
+                 |
+                 +-----notebooks # Se guardan los notebooh en R
+                 
+
+## Ciclo de Análisis ARS: Generar fichero gdf para Gephi
+
+Este script genera un fichero gdf para que sirva de entrada a Gephi. El formato gdf es texto plano, compuesto de dos zonas:
+
+-   Descripción de los nodos: en este caso serán los autores de los tweets con un conjunto de atributos como:
+    -   Seguidores
+    -   Seguidos
+    -   Numero de tweets publicados
+    -   Hashtag usado
+    -   Lenguaje utilizado
+    -   Fecha de alta en twitter
+    -   Año de alta en Twitter
+    -   Avatar por defecto
+-   Descripción de las relaciones: para cada retweet, un par formado por el retuiteador y el retuiteado
+
+El resultado se almacena en un fichero con el nombre del dataset y la extensión gdf
+
+![ciclo Análisis ARS: Generar gdf](https://github.com/congosto/congosto.github.io/raw/master/ciclo_ARS_csv2gdf.jpg)
+
+## Importamos librerias
+
+```{r libraries}
+if(!"tidyverse" %in% installed.packages()) {install.packages("tidyverse")}
+if(!"lubridate" %in% installed.packages()) {install.packages("lubridate")}
+library(tidyverse)        # Manejo de datos y gráficas
+library(lubridate)        # Manejo de fechas
+```
+
+## Importamos funciones
+
+```{r functions}
+source("share_functions.R")              # Funciones generales
+```
+
+## Entorno por defecto
+
+```{r environment}
+## Entorno por defecto. No tocar salvo que se quiera usar otro entorno
+dataset_name <- params$dataset_name    # Nombre del dataset
+data_path <- paste0("../datos/", dataset_name, "/") # Directorio de datos
+name_file_in <- paste0(data_path,dataset_name,".csv")
+name_file_out <- paste0(data_path,dataset_name,".gdf")
+```
+
+## Leemos los datos
+
+```{r read_data}
+file_tweets <- paste0(name_file_in)
+tweets <- read_csv(
+  file_tweets,
+  col_names = TRUE,
+  cols_only( created_at = col_datetime(), 
+    author = col_character(),
+    app = col_character(),
+    relation = col_character(),
+    user_replied = col_character(),
+    user_retweeted = col_character(),
+    first_HT = col_character(),
+    lang = col_character(),
+    followers = col_number(),
+    following = col_number(),
+    statuses = col_number(),
+    created_at = col_datetime(),
+    avatar = col_character()
+  )
+)
+```
+
+## Calculamos los más retuiteados
+
+```{r top_RTS}
+ranking_RT <- tweets %>%
+  group_by(user_retweeted) %>%
+  summarise(
+    n_RT = n(),
+    .group = "drop"
+  ) %>%
+  ungroup() %>%
+  filter(!is.na(user_retweeted) ) %>%
+  arrange(desc(n_RT))
+```
+
+## Generamos los nodos y sus atributos
+
+```{r nodes}
+# Le añado el ranking de RTs
+nodos  <- tweets %>%
+  #dejamos solo un tweet por usuario para recoger sus datos de perfil
+  group_by(author) %>% 
+  slice(1) %>%
+  ungroup() %>%
+  # Calculamos el logaritmo en base 10 de las métricas del usuario para que se puedan
+  # agrupar en potencias de 10
+  mutate(log_followers = ifelse(followers >0, round(log10(followers),0),1 )) %>%
+  mutate(log_following = ifelse(following >0, round(log10(following),0),1 )) %>%
+  mutate(log_statuses = ifelse(statuses >0,  round(log10(statuses)),0),1 ) %>%
+  # Extraigo el año para que se puedan agrupar por antigüedad
+  mutate(year_created_at = year(created_at)) %>%
+  # Marco si tiene avatar por defecto
+  mutate(avatar_default = str_detect(avatar,"default_profile")) %>%
+  # Le añadimos el ranking de RTs
+  left_join(ranking_RT, by = c( "author" = "user_retweeted")) %>%
+  # Cambiamos valores nulos por 0 a n_RT
+  mutate(n_RT =ifelse(is.na(n_RT), 0,n_RT)) %>%
+  # Cambiamos valores nulos por string vacío e first_ht
+  mutate(first_HT =ifelse(is.na(first_HT),"",first_HT )) %>%
+  # Ordenamos por el ranking
+  arrange(desc(n_RT)) %>%
+  # Seleccionamos los atributos del nodo
+  select( author,n_RT,app,first_HT, lang, log_followers,log_following,
+          log_statuses, created_at,
+          year_created_at, avatar_default
+  )
+```
+
+## Generamos los arcos y sus atributos
+
+```{r arcs}
+# Aplicamos el orden de los nodos
+tweets$author <- factor(tweets$author,levels=nodos$author) # Ordenamos según nodos
+arcos  <- tweets %>%
+  # Dejamos solo los RTs
+  filter(!is.na(user_retweeted))  %>%
+  # Añadimos una columna necesaria para gephi
+  mutate(directed = "TRUE") %>%
+  # Agrupamos para contar el número de RTs de cada usuario
+  group_by(author,user_retweeted,directed) %>% 
+    summarise(weight = n(),
+             .groups = "drop")  %>%
+  ungroup() %>%
+  # Aplicamos el mismo orden que los nodos
+  arrange(author)
+```
+
+## Generamos el gdf
+
+```{r write_file}
+# generamos la cabecera de los nodos y arcos
+head_nodos <- "nodedef>name VARCHAR,n_RTS INT,source VARCHAR, first_ht VARCHAR,lang VARCHAR, log_followers INT,log_following INT,log_statuses VARCHAR,account created_at VARCHAR,year_created_at VARCHAR, avatar_default VARCHAR"
+head_arcos <- "edgedef>node1 VARCHAR,node2 VARCHAR, directed BOOLEAN, weight INT"  
+# escribimos el fichero gdf
+write(head_nodos,name_file_out)
+write_csv(nodos,name_file_out,append=TRUE,col_names = FALSE)
+write(head_arcos,name_file_out,append=TRUE,)
+write_csv(arcos,name_file_out,append=TRUE,col_names = FALSE)
+```

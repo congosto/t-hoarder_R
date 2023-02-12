@@ -1,0 +1,247 @@
+---
+title: "Clasificar los tweets con un fichero Gephi"
+output: html_notebook
+editor_options: 
+  markdown: 
+    wrap: 72
+params:
+    dataset_name : "xxxxxxxxxx"            # Nombre del dataset
+    file_gephi: "xxxxxxxxx.csv"            # Nombre del fichero que se ha exportado de gephi
+    max_communities: 14                    # El valor máximo es 14 pero se puede poner un número menor
+---
+
+```{r setup, 	echo = TRUE,message = FALSE,	warning = FALSE,include=FALSE, cache = FALSE}
+
+require("knitr")
+## setting working directory
+opts_knit$set(root.dir = "./")
+```
+
+## Entorno de trabajo
+
+Estos notebooks trabajan con esta estructura de directorios
+
+    dir_raiz ----+-----data      # Se guardan los datos, cada dataset en un directorio independiente
+                 |
+                 +-----keys      # se guardan los ficheros con las claves de acceso. 
+                 |
+                 +-----notebooks # Se guardan los notebooh en R
+
+## Ciclo de Análisis ARS: Clasificar tweets por ARS
+
+![ciclo Análisis ARS: Clasificar
+tweets](https://github.com/congosto/congosto.github.io/raw/master/ciclo_ARS_classify.jpg)
+
+Este script clasifica los tweets según la "modularity class" calculada
+con Gephi. Para hacer la clasificación se necesitan:
+
+-   El dataset con los tweets
+-   Un fichero exportado de Gephi con los datos de red de los perfiles
+
+La clasificación se realiza añadiendo la columna "community" al dataset
+con los tweets en la que se aplicará:
+
+-   La "modularity class" del autor del tweet si es un mensaje original,
+    una cita o un comentario
+
+-   En el caso de ser un retweet, se le asignará la "modularity class"
+    del retuiteado.
+
+Adicionalmente, generará las leyendas para la visualización de la
+propagación por "community", por lenguaje y por hashtags.
+
+El resultado se almacena en un fichero con el nombre del dataset y el
+sufijo "communities".
+
+```{r libraries}
+if(!"tidyverse" %in% installed.packages()) {install.packages("tidyverse")}
+library(tidyverse) # Manejo de datos y gráficas
+```
+
+## Importamos funciones
+
+```{r functions}
+source("share_functions.R")              # Funciones generales
+```
+
+## Entorno por defecto
+
+```{r environment}
+## Entorno por defecto. No tocar salvo que se quiera usar otro entorno
+dataset_name <- params$dataset_name         # Nombre del dataset
+file_gephi <- params$file_gephi             # Nombre del fichero que se ha exportado de gephi
+max_communities <-  params$max_communities  # El valor máximo es 14 pero se puede poner un número menor
+data_path <- paste0("../datos/", dataset_name, "/") # Directorio de datos
+name_file_in <- paste0(data_path,dataset_name,".csv")
+name_file_gephi <- paste0(data_path, file_gephi) 
+name_file_out <- paste0(data_path,dataset_name,"_classified.csv")
+name_file_communities <- paste0(data_path,dataset_name,"_communities.csv")
+```
+
+## Leemos los tweets y del fichero de gephi
+
+```{r read_data}
+tweets <- read_csv(
+  name_file_in,
+  col_names = TRUE,
+  cols_only(
+    date = col_datetime(), 
+    author = col_character(),
+    text = col_character(),
+    followers  = col_number(),
+    location = col_character(),
+    name = col_character(),
+    description = col_character(),
+    urls = col_character(),
+    url_media = col_character(),
+    type_media = col_character(),
+    relation = col_character(),
+    user_retweeted = col_character(),
+    first_HT = col_character(),
+    lang = col_character(),
+    retweet_count = col_number(),
+    reply_count = col_number(),
+    quote_count = col_number(),
+    favorite_count = col_number()
+  )
+)    
+datos_gephi <- read_csv(
+  name_file_gephi,
+  col_names = TRUE,
+  cols_only(
+    Label = col_character(), 
+    n_rts = col_number(),
+    modularity_class = col_character(),
+    componentnumber = col_number()
+  )
+)
+```
+
+## Clasificamos tweets
+
+```{r classify_tweets}
+`%!in%` = Negate(`%in%`)
+if("user_retweeted" %!in% names(tweets)) {
+tweets <- tweets %>%
+  mutate( relation = ifelse(str_detect( text,"RT @"),"RT",NA)) %>%
+  mutate( user_retweeted = ifelse(relation == "RT",
+                                   tolower(str_extract(text,"@[\\w]+")),NA)
+  ) %>%
+  mutate(author = tolower(author) ) 
+}
+# Filtramos la componente gigante(si la hay) y dejamos el fichero de gephi con solo dos columnas: Label y modularity_class 
+if("componentnumber" %in% names(datos_gephi)) {
+datos_gephi <- datos_gephi %>%
+  #filtramos nodos de la componente gigante
+  filter(componentnumber == 0 )
+}
+datos_gephi_cg <- datos_gephi %>%
+  #seleccionamos datos para la clasificación
+  #mutate(Label = paste0("@",Label)) %>% #solo para grafos de de seguimiento
+  select(Label,modularity_class, n_rts) 
+# Si es un RT, se aplica la modularidad del retuiteado, si no la del autor del tweet
+tweets_clasificados <- tweets %>%
+  # creamos la columna para clasificar
+  mutate(user_class = ifelse(is.na(user_retweeted) ,  author , user_retweeted )) %>%
+  # Unimos los tweets con los datos de gephi por la columna user_class
+  left_join(datos_gephi_cg, by = c("user_class" = "Label")) %>%
+  # quitamos la columna para clasificar
+  select(-user_class) %>%
+  #cambiamos modularity_class pir community por compatibilidad con t-hoarder
+  rename("community" = "modularity_class")
+# Vemos cuantos tweets quedan sin clasificar 
+num_tweets = nrow(tweets)
+tweets_sin_clasificar <- tweets_clasificados %>%
+  filter( is.na(community)) 
+num_tweets_sin_clasificar <-  nrow(tweets_sin_clasificar)   
+print(paste0("tweets sin clasificar: ", round((num_tweets_sin_clasificar*100)/num_tweets,2),"%")) 
+## escribimos los tweets
+write_csv(tweets_clasificados, name_file_out)
+```
+
+## Generamos los ficheros de comunidades para las gráficas
+
+Para evitar el trabajo tedioso de generar manualmente los colores de las
+comunidades que detecta Gephi se ofrece una manera de automatizarlo
+aunque con algunas limitaciones:
+
+-   Se limita el número de comunidades a catorce, cifra que creo que es
+    suficiente en la mayoría de los casos.
+
+-   Se han elegido los ocho colores que Gephi asigna por defecto como lo
+    primeros ocho colores y se han añadido seis más hasta completar los
+    catorce.
+
+![Colores por defecto de Gephi](./colores_defecto_gephi.PNG)
+
+Colores por defecto del script:
+
+-   [#CC66FF RGB(204,102,255)]{style="color:#CC66FF"}
+-   [#92D050 RGB(146,208,80)]{style="color:#92D050"}
+-   [#00B0F0 RGB(0,176,240)]{style="color:#00B0F0"}
+-   [#404040 RGB(64,64,64)]{style="color:#404040"}
+-   [#FF9900 RGB(255,153,0)]{style="color:#FF9900"}
+-   [#FF5050 RGB(255,80,80)]{style="color:#FF5050"}
+-   [#00D67F RGB(0,214,127)]{style="color:#00D67F"}
+-   [#F8CBAD RGB(248,203,173)]{style="color:#F8CBAD"}
+-   [#8A2E00 RGB(138,46,0)]{style="color:#8A2E00"}
+-   [#993366 RGB(153,51,102)]{style="color:#993366"}
+-   [#0033CC RGB(0,51,204)]{style="color:#0033CC"}
+-   [#008E55 RGB(0,142,85)]{style="color:#008E55"}
+-   [#45682D RGB(69,104,45)]{style="color:#45682D"}
+-   [#702500 RGB(112,37,0)]{style="color:#702500"}
+
+```{r legend_communities}
+# Los colores se aplicarán a las comunidades de mayor a menor número de perfiles
+communities_color <- c(
+  "#CC66FF",
+  "#92D050",
+  "#00B0F0",
+  "#404040",
+  "#FF9900",
+  "#FF5050",
+  "#00D67F",
+  "#F8CBAD",
+  "#8A2E00",
+  "#993366",
+  "#0033CC",
+  "#008E55",
+  "#45682D",
+  "#702500")
+
+color_df <- data.frame(color = communities_color) %>%
+  head(max_communities)
+# Filtramos la componente gigante(si la hay) y dejamos el fichero de gephi con solo dos columnas: Label y modularity_class 
+if("componentnumber" %in% names(datos_gephi)) {
+datos_gephi_cg <- datos_gephi %>%
+  #filtramos nodos de la componente gigante
+  filter(componentnumber == 0 )
+}
+# Seleccionamos las comunidades con más perfiles
+ranking_communities <- datos_gephi_cg %>%
+  group_by(modularity_class) %>%
+  summarise(
+    n_user = n(),
+    .group = "drop"
+  ) %>%
+  ungroup() %>%
+  arrange(desc(n_user)) %>%
+  head(max_communities)
+# Seleccionamos los perfiles con más RTS de cada comunidad 
+order_communities <- as.list(ranking_communities$modularity_class)
+datos_gephi_cg$modularity_class <- factor(datos_gephi_cg$modularity_class,levels = order_communities)
+ranking_RT <- datos_gephi_cg %>%
+  filter(!is.na(n_rts)) %>%
+  filter(modularity_class %in% order_communities) %>%
+  arrange(factor(modularity_class),desc(n_rts)) %>%
+  select(modularity_class,Label) %>%
+  group_by(modularity_class) %>% 
+  slice(1) %>%
+  ungroup() %>%
+  rename(
+    "community" = "modularity_class",
+    "name_community" ="Label"
+  ) %>%
+  cbind(color_df)
+write_csv(ranking_RT,name_file_communities)
+```

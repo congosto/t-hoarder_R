@@ -1,0 +1,120 @@
+---
+title: "search de Tweets con API académica"
+output:
+  html_document:
+    df_print: paged
+params:
+    dataset_name : "xxxxxxxxxxxx"        # Nombre del dataset
+    query        : "xxxxxxxxxxxxx"       # Query para la búsqueda de tweets
+    max_tweets   : 100000                # Máximo número de tweets. 
+    start_time   : "2006-04-01 00:00:00" # Formato YYYY-MM-DD 00:00:00. Por defecto fecha de creación de Twitter
+    end_time     : "YYYY-MM-DD 00:00:00" # Formato YYYY-MM-DD 00:00:00. Hora GMT
+---
+
+```{r setup, 	echo = TRUE,message = FALSE,	warning = FALSE,include=FALSE, cache = FALSE}
+
+require("knitr")
+## setting working directory
+opts_knit$set(root.dir = "./")
+```
+
+## Entorno de trabajo
+
+Estos notebooks trabajan con esta estructura de directorios
+
+    dir_raiz ----+-----data      # Se guardan los datos, cada dataset en un directorio independiente
+                 |
+                 +-----keys      # se guardan los ficheros con las claves de acceso. 
+                 |
+                 +-----notebooks # Se guardan los notebooh en R
+                 
+
+## Requisitos
+
+-   Disponer de una app Académica
+-   Configurar la clave de acceso por defecto. Solo es necesario hacerlo una vez con el cuaderno cfg_API_academic.Rmd. Esto permite comprobar que la calve funciona y evita tener que introducirla como parámetro en los otros cuadernos.
+
+## Importamos librerías
+
+```{r libraries}
+if (!"academictwitteR" %in% installed.packages()) {install.packages("academictwitteR")}
+if (!"tidyverse" %in% installed.packages()) {install.packages("tidyverse")}
+if (!"lubridate" %in% installed.packages()) {install.packages("lubridate")}
+if (!"base" %in% installed.packages()) {install.packages("base")}
+if (!"svDialogs" %in% installed.packages()) {install.packages("svDialogs")}
+library(base)             # Librerías base de R
+library(academictwitteR)  # Interfaz con API Twitter Académiva V2
+library(tidyverse)        # Manejo de datos y gráficas
+library(lubridate)        # Manejo de fechas
+library(svDialogs)        # Cuadros de diálogo y formularios
+locale(date_names = "en", date_format = "%AD", time_format = "%AT",
+  decimal_mark = ".", grouping_mark = ",", tz = "Europe/Berlin",
+  encoding = "UTF-8", asciify = FALSE)
+Sys.setlocale(category = "LC_ALL", locale = "english")
+
+```
+
+## Importamos funciones
+
+```{r functions}
+source ("share_functions.R")              # Funciones generales
+source ("share_functions_API_academic.R") # Funciones para la API Academic
+```
+
+## Entorno por defecto
+
+```{r environment}
+## Entorno por defecto. No tocar salvo que se quiera usar otro entorno
+dataset_name <- params$dataset_name    # Nombre del dataset
+query <- params$query                  # Query para la búsqueda de tweets
+max_tweets <- params$max_tweets        # Máximo número de tweets. 
+start_time <- params$start_time        # Formato YYYY-MM-DD. Por defecto fecha de creación de Twitter
+end_time <- params$end_time            # Formato YYYY-MM-DD. Por defecto hora actuual
+data_path <- paste0("../datos/",dataset_name,"/") # Directorio de datos
+file_out <- paste0(data_path,dataset_name,".csv")
+# Check si existe ya el dataset
+check_dataset_exist(file_out)
+key_file <- "../keys/key_academic_default.txt"  # Clave por defecto
+if (!file.exists(key_file)) {
+ stop("There is no default keyfile, the notebook cfg_API_academic.Rmd must be run once before")
+}
+temporal_file = "tmp"
+```
+
+## Autenticación en OAuth
+
+```{r authentication}
+keys <- read.csv (file = key_file, header = FALSE)
+```
+
+## Descargar Tweets
+
+```{r search_tweets}
+start_run_time = Sys.time ()
+# Borramos ficheros temporales
+if (file.exists(temporal_file)) {
+ unlink(temporal_file, recursive = TRUE)
+ cat("The directory is deleted")
+}
+# Descargamos los tweets
+tweets <- get_all_tweets(
+  query = query,
+  start_tweets = paste0(gsub(" ","T",start_time,"T00:00:00z"),"z"), # Formato para función get_all_tweets,
+  end_tweets =  paste0(gsub(" ","T",end_time,"T00:00:00z"),"z"), # Formato para función get_all_tweets
+  n = max_tweets,
+  bind_tweets = TRUE,
+  data_path = temporal_file,
+  bearer_token = keys[1,],
+  context_annotations = TRUE
+)
+# Por cada 100 tweets genera
+#  un fichero json con los tweets que empieza por data_
+#  un fichero json con los datos de los usuarios que empieza por users_
+# Normalizamos lo datos de los tweets
+print (nrow(tweets))
+tweets_nor_df <- parser_tweets_API_academic (tweets)
+write_csv (tweets_nor_df,file_out)
+end_run_time = Sys.time ()
+print (paste ( "inicio: ",start_run_time))
+print (paste ( "fin: ",end_run_time))
+```
