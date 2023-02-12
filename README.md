@@ -1,23 +1,17 @@
-Índice de contenidos
 
--   [t-hoarder_R](#t-hoarder-R)
-    -   [Entorno de trabajo](#entorno-de-trabajo)
-    -   [Requisitos](#requisitos)
-        -   [Configurar las credenciales de acceso a la API Standard](#configurar-las-credenciales-de-acceso-a-la-API-Standard)
-        -   [Credenciales de acceso a la API Académica](#credenciales-de-acceso-a-la-API-Académica)
-    -   [Descripción de los notebooks](#descripción-de-los-notebooks)
-    -   [Ejemplos de búsquedas en Twitter](#ejemplos-de-busquedas-en-twitter)
-    -   [Ejemplos de Visualizaciones](#ejemplos-de-visualizaciones)
+# T-hoarder_R
 
-# t-hoarder_R {#t-hoarder-R}
+Un conjunto de notebooks en R para extraer datos de Twitter y visualizarlos
 
-La motivación de generar este repositorio es la hacer llegar a los investigadores unas herramientas que les permitan analizar información de **Twitter** sin que tengan que tener conocimientos de programación. Estas herramientas están en la línea de t-hoarder y de t-hoarder_kit, pero añadiéndoles una capa de visualización.
+## Motivación
 
-Este conjunto de herramientas están programadas en R, en formato **notebook**, que combina código R con texto enriquecido (Markdown). Esto permite una documentación más legible de los pasos a seguir. Se pueden ejecutar desde RStudio que es una aplicación de escritorio disponible para WIndows, linux y Mac. Están pensados para que se ejecuten de una vez (opción run all) pero pueden ejecutarse paso a paso. Se aconseja ejecutarlos en Rstudio en modo **visual** (pestaña de la ventana de código) para que sea más legible.
+Este repositorio se ha generado para hacer llegar a los investigadores unas herramientas que les permitan analizar información de **Twitter** sin que tengan que tener conocimientos de programación. Estas herramientas están en la línea de t-hoarder y de t-hoarder_kit, pero añadiéndoles una capa de visualización.
+
+Este conjunto de herramientas están programadas en R, en formato **notebook**, que combina código R con texto enriquecido (Markdown). Esto permite una documentación más legible de los pasos a seguir. Se pueden ejecutar desde **RStudio** que es una aplicación de escritorio disponible para Windows, linux y Mac. Están pensados para que se ejecuten de una vez (opción run all) pero pueden ejecutarse paso a paso. Se aconseja ejecutarlos en Rstudio en modo **visual** (pestaña de la ventana de código) para que sea más legible.
 
 El paso de parámetros se realiza en la primera casilla del cuaderno. Podría haber creado una aplicación interactiva con Shiny pero implicaría una configuración más compleja de las herramientas. En este momento me ha parecido lo más razonable y al alcance de todo el mundo organizarlo en **notebook** con la esperanza de que usándose, se despierte la curiosidad por R y algunos se animen a hacer sus pinitos.
 
-## Entorno de trabajo {#entorno-de-trabajo}
+## Entorno de trabajo
 
 Estos **notebooks** trabajan con esta estructura de directorios prefijada.
 
@@ -30,7 +24,7 @@ Estos **notebooks** trabajan con esta estructura de directorios prefijada.
 
 Al descargar los datos de github con , se descargará esta estructura. Si se opta por otra forma de organizar los datos, los notebooks tendrán que ser modificados.
 
-## Requisitos {#requisitos}
+## Requisitos 
 
 Twitter ofrece desde el inicio de su creación un conjunto de APIs (Aplication Programming Interface) que permiten acceder mediante programas a sus datos. Con el tiempo han ido apareciendo nuevas APIs según las necesidades de acceso a la información, algunas gratis y otras de pago. También han ido evolucionando las versiones. Actualmente conviven la V1.1 y la V2.
 
@@ -42,7 +36,7 @@ Para evitar tener que especificar en cada notebook cuales son las claves de acce
 
 ![Ciclo Análisis](https://github.com/congosto/congosto.github.io/raw/master/ciclos_t-hoarder_R.JPG)
 
-### Configurar las credenciales de acceso a la API Standard {#configurar-las-credenciales-de-acceso-a-la-API-Standard}
+### Configurar las credenciales de acceso a la API Standard 
 
 A las APIs se accede mediante un protocolo OAuth (**O**pen **Auth**orization). Se trata de un protocolo para permitir la autorización de un servicio a otro sin compartir las credenciales de usuario reales, como un nombre de usuario y contraseña.
 
@@ -63,7 +57,7 @@ Para obtener las credenciales que nos permitan trabajar en **Modo usuario** usar
 
 Una vez obtenidas las claves se almacenarán en el **directorio keys** y se ejecutará el **notebook cfg_API_standard.Rmd**. Esto solo habrá que hacerlo una vez. Las credenciales por defecto se guardarán en el directorio keys y serán usadas en adelante por los notebooks de descarga de datos de Twitter.
 
-### Credenciales de acceso a la API Académica {#credenciales-de-acceso-a-la-API-Académica}
+### Credenciales de acceso a la API Académica 
 
 Cuando Twitter concede el acceso a la API Académica proporciona una **app**. Acedemos a ella desde el [Developer portal](https://developer.twitter.com/). En el caso que no la hubiera creado, la crearemos desde este portal.
 
@@ -86,7 +80,7 @@ Se recomienda que estos ficheros tengan el prefijo "key", el nombre de la app y 
 
 A continuación se ejecutará el **notebook cfg_API_academic.Rmd**. Esto solo habrá que hacerlo una vez. Las credenciales por defecto se guardarán en el directorio keys y serán usadas en adelante por los notebooks de descarga de datos de Twitter.
 
-## Descripción de los notebooks {#descripción-de-los-notebooks}
+## Descripción de los notebooks 
 
 Estos **notebook** permiten la descarga de datos de Twitter y su visualización.
 
@@ -187,9 +181,9 @@ En ambos casos se ofrece la opción de poder hacer zoom en las gráficas especif
     -   Most frequent words
     -   Most frequent retweets
 
-## Ejemplos de búsquedas en Twitter {#ejemplos-de-busquedas-en-twitter}
+## Ejemplos de búsquedas en Twitter 
 
-### Tipos de consultas {#tipos-de-consultas}
+### Tipos de consultas 
 
 Las consultas no son exactamente igual en la API V1,1 que en la API V2, la primera dejó de actualizarse cuando se liberó la segunda que es donde se incluyen todas las novedades. Con todo, en la V1,1. se pueden hacer consultas avanzadas.
 
@@ -214,7 +208,7 @@ Puede hacerse de dos formas:
 -   Con la API standard V1.1 **users_tweets_API_standard.Rmd** que obtendrá los últimos 3.200 tweets publicados por el usuario
 -   Con la API API Académica V2 **search_tweets_API_academic.Rmd** con la query "from:usuario", que obtendrá todos los tweets del usuario en el rango de fechas que se especifique
 
-## Ejemplos de Visualizaciones {#ejemplos-de-visualizaciones}
+## Ejemplos de Visualizaciones 
 
 ### De propagación de tweets
 
@@ -287,4 +281,3 @@ query -\> from:elommusk
 #### Most frequent retweets
 
 ![Ejemplo de Perfiles más retuiteados](https://github.com/congosto/congosto.github.io/raw/master/elonmusk_retweets_frequency_zoom.png)
-
