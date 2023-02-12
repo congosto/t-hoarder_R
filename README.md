@@ -250,7 +250,7 @@ query -\> from:EmbajadaRusaES OR to:EmbajadaRusaES OR retweets_of:EmbajadaRusaES
 
 #### Most frequent words by group
 
-[Ejemplo de Origen de los tweets]<https://github.com/congosto/congosto.github.io/blob/master/embajada_rusa_words_frequency_by_group.png>)
+[Ejemplo de Origen de los tweets]<https://github.com/congosto/congosto.github.io/raw/master/embajada_rusa_words_frequency_by_group.png>)
 
 ### De perfilado de usuarios
 
