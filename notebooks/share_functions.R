@@ -15,8 +15,7 @@ check_dataset_exist <- function(dataset){
       stop("Use another dataset name")
     }else{
       cat("The dataset will be overwritten\n")
-      load(file_params)
-     }
+      }
   }else{
     dir.create(data_path)
     cat(paste(data_path," created\n"))
