@@ -63,8 +63,8 @@ time_scale <- function(ini_date,end_date) {
     num_years >= 10 ~ "years",
     num_months >= 12 ~ paste(as.integer((num_months+12)/12), "months"),
     num_weeks >= 25 ~ paste(as.integer((num_weeks+7)/7), "weeks"),
-    num_days >= 5 ~ paste(as.integer((num_days+10)/10), "days"),
-    num_hours >= 0 ~ paste(as.integer((num_hours+24)/24), "hours") 
+    num_days >= 4 ~ paste(as.integer((num_days+10)/10), "days"),
+    num_hours >= 0 ~ paste(as.integer((num_hours+6)/6), "hours") 
 ) 
   return(spaced_dates)
 }
@@ -85,7 +85,7 @@ format_time <- function(ini_date,end_date) {
     num_years >= 10 ~ "%Y",
     num_months >= 12 ~ "%b\n%Y",
     num_weeks >= 25 ~ "%d-%b\n%Y",
-    num_days >= 5 ~ "%d-%b\n%Y",
+    num_days >= 4 ~ "%d-%b\n%Y",
     num_hours >= 0 ~ "%H:00\n%d-%b" 
   )
   return(format_dates)
@@ -107,7 +107,7 @@ format_time_plain <- function(ini_date,end_date) {
     num_years >= 10 ~ "%Y",
     num_months >= 12 ~ "%b-%Y",
     num_weeks >= 25 ~ "%d-%b-%Y",
-    num_days >= 5 ~ "%d-%b-%Y",
+    num_days >= 4 ~ "%d-%b-%Y",
     num_hours >= 0 ~ "%H:00-%d-%b" 
   )
   return(format_dates)
