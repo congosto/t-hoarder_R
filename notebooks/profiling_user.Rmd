@@ -5,8 +5,8 @@ output:
   html_document:
     df_print: paged
 params:
-    dataset_name: "xxxxxxx"        # Nombre del dataset
-    base_title: "xxxxxxxxx"        # Prefijo del título principal de las gráficas
+    dataset_name: "xxxxxxxxxx"     # Nombre del dataset
+    base_title: "xxxxxxxxxxxx"     # Prefijo del título principal de las gráficas
     time_zone: "Europe/Berlin"     # Huso horario
     zoom: FALSE                    # (TRUE/FALSE) TRUE si se desea hacer zoom 
     date_ini_zoom: "YYYY-MM-AA"    # (Solo si zoom es TRUE) Fecha de inicio del zoom, formato YYYY-MM-AA 
@@ -157,7 +157,7 @@ tweets_df <- tweets %>%
     relation = ifelse(
       (relation == 'reply' & author == user_replied),
       'thread', relation )
-    ) %>% #detectamos los hilos
+  ) %>% #detectamos los hilos
   mutate(relation = ifelse(is.na(relation), "original",relation)) %>%
   mutate( slot_time= as.POSIXct(floor_date(lubridate::with_tz(date, "Europe/Berlin"),"day"))) %>%
   mutate(hour_tweet= hour(lubridate::with_tz(date, "Europe/Berlin")))
@@ -205,7 +205,7 @@ if(zoom) {
 
 -   Linea temporal de publicación por tipo de tweet
 
-```{r daily_activity_total, echo=FALSE, fig.height=6, fig.width=10, message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r daily_activity_total, echo=FALSE, fig.width=9, fig.height=5, message=FALSE, warning=FALSE, paged.print=FALSE}
 p <- daily_activity(tweets_df,  date_ini, date_end)
 print(p)
 # Salvamos la gráfica en un archivo
@@ -216,7 +216,7 @@ ggsave(paste0(img_path,base_name_file_img, "_daily_activity_total.png"))
 
 -   Linea temporal de publicación por tipo de tweet
 
-```{r daily_activity_zoom, echo=FALSE, fig.height=6, fig.width=10, message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r daily_activity_zoom, echo=FALSE, fig.width=9, fig.height=5, message=FALSE, warning=FALSE, paged.print=FALSE}
 if(zoom) {
   p <- daily_activity(tweets_df,  date_ini_zoom, date_end_zoom)
   print(p)
@@ -240,7 +240,7 @@ Por comprobaciones empíricas si en un mensaje la suma de comentarios y citas es
 
 #### Periodo total
 
-```{r impact_fav_total, echo=FALSE, fig.height=6, fig.width=10, message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r impact_fav_total, echo=FALSE, fig.width=9, fig.height=5, message=FALSE, warning=FALSE, paged.print=FALSE}
 my_color <- c("Num. original tweets" = "#33E9FF", "Fav" = "red4")
 p <- impact_tweets(tweets_df, date_ini, date_end, "Fav", my_color)
 print(p)
@@ -252,7 +252,7 @@ ggsave(paste0(img_path,base_name_file_img, "_tweets_vs_fav_total.png"))
 
 #### Zoom
 
-```{r impact_fav_zoom, echo=FALSE, fig.height=6, fig.width=10, message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r impact_fav_zoom, echo=FALSE, fig.width=9, fig.height=5, message=FALSE, warning=FALSE, paged.print=FALSE}
 if(zoom) {
   my_color <- c("Num. original tweets" = "#33E9FF", "Fav" = "red4")
   p <- impact_tweets(tweets_df, params$date_ini_zoom, params$date_end_zoom, "Fav", my_color)
@@ -266,7 +266,7 @@ if(zoom) {
 
 #### Periodo total
 
-```{r impact_rt_total, echo=FALSE, fig.height=6, fig.width=10, message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r impact_rt_total, echo=FALSE, fig.width=9, fig.height=5, message=FALSE, warning=FALSE, paged.print=FALSE}
 my_color <- c("Num. original tweets" = "#33E9FF", "RTs" = "red4")
 p <- impact_tweets(tweets_df, date_ini, date_end, "RTs", my_color)
 print(p)
@@ -276,7 +276,7 @@ ggsave(paste0(img_path,base_name_file_img, "_tweets_vs_RTs_total.png"))
 
 #### Zoom
 
-```{r impact_rt_zoom, echo=FALSE, fig.height=6, fig.width=10, message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r impact_rt_zoom, echo=FALSE, fig.width=9, fig.height=5, message=FALSE, warning=FALSE, paged.print=FALSE}
 if(zoom) {
   my_color <- c("Num. original tweets" = "#33E9FF", "RTs" = "red4")
   p <- impact_tweets(tweets_df, params$date_ini_zoom, params$date_end_zoom, "RTs", my_color)
@@ -289,7 +289,7 @@ if(zoom) {
 
 #### Periodo total
 
-```{r impact_replies_total, echo=FALSE, fig.height=6, fig.width=10, message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r impact_replies_total, echo=FALSE, fig.width=9, fig.height=5, message=FALSE, warning=FALSE, paged.print=FALSE}
 my_color <- c("Num. original tweets" = "#33E9FF", "Replies" = "red4")
 p <- impact_tweets(tweets_df, date_ini, date_end, "Replies", my_color)
 print(p)
@@ -299,7 +299,7 @@ ggsave(paste0(img_path,base_name_file_img, "_tweets_vs_replies_total.png"))
 
 #### Zoom
 
-```{r impact_replies_zoom, echo=FALSE, fig.height=6, fig.width=10, message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r impact_replies_zoom, echo=FALSE, fig.width=9, fig.height=5, message=FALSE, warning=FALSE, paged.print=FALSE}
 if(zoom) {
   my_color <- c("Num. original tweets" = "#33E9FF", "Replies" = "red4")
   p <- impact_tweets(tweets_df, params$date_ini_zoom, params$date_end_zoom, "Replies", my_color)
@@ -313,7 +313,7 @@ if(zoom) {
 
 #### Periodo total
 
-```{r impact_quotes_total, echo=FALSE, fig.height=6, fig.width=10, message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r impact_quotes_total, echo=FALSE, fig.width=9, fig.height=5, message=FALSE, warning=FALSE, paged.print=FALSE}
 my_color <- c("Num. original tweets" = "#33E9FF", "Quotes" = "red4")
 p <- impact_tweets(tweets_df, date_ini, date_end, "Quotes", my_color)
 print(p)
@@ -323,7 +323,7 @@ ggsave(paste0(img_path,base_name_file_img, "_tweets_vs_quotes_total.png"))
 
 #### Zoom
 
-```{r impact_quotes_zoom, echo=FALSE, fig.height=6, fig.width=10, message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r impact_quotes_zoom, echo=FALSE, fig.width=9, fig.height=5, message=FALSE, warning=FALSE, paged.print=FALSE}
 if(zoom) {
   my_color <- c("Num. original tweets" = "#33E9FF", "Quotes" = "red4")
   p <- impact_tweets(tweets_df, params$date_ini, params$date_end, "Quotes", my_color)
@@ -336,7 +336,7 @@ ggsave(paste0(img_path,base_name_file_img, "_tweets_vs_quotes_zoom.png"))
 
 ####  Periodo total
 
-```{r impact_impresions_total, echo=FALSE, fig.height=6, fig.width=10, message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r impact_impresions_total, echo=FALSE, fig.width=9, fig.height=5, message=FALSE, warning=FALSE, paged.print=FALSE}
 my_color <- c("Num. original tweets" = "#33E9FF", "Impresions" = "red4")
 p <- impact_tweets(tweets_df, date_ini, date_end, "Impresions", my_color)
 print(p)
@@ -346,7 +346,7 @@ ggsave(paste0(img_path,base_name_file_img, "_tweets_vs_impresions.png"))
 
 #### Zoom
 
-```{r impact_impresions_zoom, echo=FALSE, fig.height=6, fig.width=10, message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r impact_impresions_zoom, echo=FALSE, fig.width=9, fig.height=5, message=FALSE, warning=FALSE, paged.print=FALSE}
 if(zoom & params$date_end_zoom >= "2022-12-15") {
   my_color <- c("Num. original tweets" = "#33E9FF", "Impresions" = "red4")
   p <- impact_tweets(tweets_df, params$date_ini_zoom, params$date_end_zoom, "Impresions", my_color)
@@ -360,7 +360,7 @@ if(zoom & params$date_end_zoom >= "2022-12-15") {
 
 #### Periodo total
 
-```{r endgadgement_total, echo=FALSE, fig.height=6, fig.width=10, message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r endgadgement_total, echo=FALSE, fig.width=9, fig.height=5, message=FALSE, warning=FALSE, paged.print=FALSE}
 p <- endgadgement_tweets(tweets_df, date_ini, date_end)
 print(p)
 # Salvamos la gráfica en un archivo
@@ -369,7 +369,7 @@ ggsave(paste0(img_path,base_name_file_img, "_endgadgement_total.png"))
 
 #### Zoom
 
-```{r Endgadgement_zoom, echo=FALSE, fig.height=6, fig.width=10, message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r Endgadgement_zoom, echo=FALSE, fig.width=9, fig.height=5, message=FALSE, warning=FALSE, paged.print=FALSE}
 if(zoom & params$date_end_zoom >= "2022-12-15") {
   p <- endgadgement_tweets(tweets_df, params$date_ini_zoom, params$date_end_zoom)
   print(p)
