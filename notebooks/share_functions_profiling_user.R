@@ -24,7 +24,7 @@ p <- ggplot() +
       size = num_tweets,
       color = relation
     ),
-    alpha =0.5) +
+    alpha =0.7) +
   scale_y_datetime(
     date_labels = format_time_plain(date_ini, date_end),
     date_breaks = time_scale(date_ini, date_end)
@@ -81,18 +81,22 @@ daily_activity <- function(df, date_ini, date_end){
         y = num_tweets,
         fill = relation
       ),
-      size =1, plapha =0.6)+
+      size =1, alpha  = 0.7)+
     geom_text_repel(
       data = tweets_tipo_tot_df %>%   
         top_n(2, num_tweets),
       aes(
         x = slot_time,
-        y = num_tweets, 
+        y = num_tweets * 1.1, 
         label = paste(slot_time,"\n(",num_tweets," tweets)")
       ),
-      nudge_x = 800, 
+      force = 10,
+      max.time = 10,
+      color = "grey50",
       size = 3.5,
-      nudge_y = 0.00003
+      vjust = .5,
+      segment.colour = "grey80",
+      show.legend = FALSE
     ) +
     scale_x_datetime(
       date_labels = format_time(date_ini, date_end),
@@ -103,7 +107,8 @@ daily_activity <- function(df, date_ini, date_end){
       limits= c(0,max_tweets*1.5),
       expan =c(0,0)
     ) +
-    labs(title = paste0(base_title,": Tipo de tweets"),
+    labs(
+      title = paste0(base_title,": Tipo de tweets"),
       x = "",
       y = "Num. Tweets per day",
       fill=""
@@ -153,20 +158,22 @@ impact_tweets <- function(df, date_ini, date_end, indicator, my_color){
           y= num_tweets,
           color = "Num. original tweets"
       ),
-      alpha=0.4)+
+      alpha=0.6
+    ) +
     geom_line(
       aes(
         x=slot_time,
         y= impact/ajuste_escala,
         color = indicator
       ),
-      size =1.2)+
-    geom_text(
+      size = 1.2
+    )+
+    geom_text_repel(
       data = tweets_impacto_df %>%   
-        top_n(1, impact),
+        top_n(2, impact),
       aes(
         x = slot_time,
-        y =(impact/ajuste_escala)+10, 
+        y =(impact/ajuste_escala)*1.1, 
         label = paste(
           slot_time,
           "\n(",
@@ -175,9 +182,13 @@ impact_tweets <- function(df, date_ini, date_end, indicator, my_color){
           ")"
         )
       ),
-      nudge_x = 800, 
-      nudge_y = 0.0001,
+      force = 10,
+      max.time = 10,
+      color = "grey50",
       size = 3.5,
+      vjust = .5,
+      segment.colour = "grey80",
+      show.legend = FALSE
     ) +
     scale_x_datetime(
       date_labels = format_time(date_ini, date_end),
@@ -190,10 +201,11 @@ impact_tweets <- function(df, date_ini, date_end, indicator, my_color){
         sec.axis = sec_axis(trans=(~ . * ajuste_escala), name = paste(indicator, "per day"),
         labels = label_number_si() )) +
     scale_color_manual(values = my_color) +
-    labs(title = paste0(base_title,": Tweets per day"," vs.",indicator),
-       x = "",
-       y = "Num. tweets per day",
-       color=""
+    labs(
+      title = paste0(base_title,": Tweets per day"," vs.",indicator),
+      x = "",
+      y = "Num. tweets per day",
+      color=""
     ) +
     my_theme() +
     theme(
@@ -241,7 +253,7 @@ endgadgement_tweets <- function(df, date_ini, date_end, indicator, my_color){
         top_n(1, endgadgement),
       aes(
         x = slot_time,
-        y = endgadgement*1.1, 
+        y = endgadgement * 1.1, 
         label = paste(
           slot_time,
           "\n(",
@@ -262,10 +274,15 @@ endgadgement_tweets <- function(df, date_ini, date_end, indicator, my_color){
       limits= c(0,max_endgadgement*1.3),
       expand= c(0,0)
     ) +
-    labs(title = paste0(base_title,": Endgadgement per day"),
-         x = "",
-         y = "Endgadgement per day",
-         color=""
+    labs(
+      title = paste0(
+        base_title,
+        ": Endgadgement per day"
+      ),
+      subtitle = "endgadgement = (Sum(RTs) * 100) / impresions", 
+      x = "",
+      y = "Endgadgement per day",
+      color=""
     ) +
     my_theme() +
     theme(
