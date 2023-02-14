@@ -2,11 +2,11 @@
 title: "Spread tweets"
 output: html_document
 params:
-    dataset_name : "xxxxxxxxx "       # Nombre del dataset
-    base_title : "xxxxxxxxxxx"        # Prefijo del título principal de las gráficas
+    dataset_name : "xxxxxxxxxx"       # Nombre del dataset
+    base_title : "xxxxxxxxxxxx"       # Prefijo del título principal de las gráficas
     min_followers_influencers: 100000 # Mínimo de followers de un perfil para ser etiquetado
     time_zone: "Europe/Berlin"        # Huso horario
-    zoom: FALSE                       # (TRUE/FALSE) TRUE si se desea hacer zoom 
+    zoom: FALSE                        # (TRUE/FALSE) TRUE si se desea hacer zoom 
     date_ini_zoom: "YYYY-MM-AA"       # (Solo si zoom es TRUE) Fecha de inicio del zoom, formato YYYY-MM-AA 
     date_end_zoom: "YYYY-MM-AA"       # (Solo si zoom es TRUE) Fecha de inicio del zoom, formato YYYY-MM-AA 
 ---
@@ -457,7 +457,7 @@ if(ARS & zoom) {
 
 # Origen de los tweets por comunidades
 
-```{r origen_tweets_by_community, fig.height=14, fig.width=9, message=FALSE, warning=FALSE}
+```{r origen_tweets_by_community, fig.height=10, fig.width=9, message=FALSE, warning=FALSE}
 if(ARS) {
   p <-location_users_by_community(tweets_df, communities)
   print(p)
@@ -468,7 +468,7 @@ if(ARS) {
 
 # Contenido de los tweets por comunidades
 
-```{r contenido_tweets_by_community, fig.height=14, fig.width=9, message=FALSE, warning=FALSE}
+```{r contenido_tweets_by_community, fig.height=10, fig.width=9, message=FALSE, warning=FALSE}
 if(ARS) {
   p <-words_frequency_by_community(tweets_df, communities)
   print(p)
