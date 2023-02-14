@@ -19,7 +19,7 @@ Summary_tweets <- function(df) {
     ) +
     geom_text(
       aes(
-        label = paste0(round(..count../sum(..count..)*100,1),"%"), 
+        label = paste0(round(..count../sum(..count..)*100,1),"%"),
         y= ..count../sum(..count..)), 
       size =4.5,
       stat="count",vjust = -0.5
@@ -202,25 +202,43 @@ tweets_vs_RTs <- function(df, periodo,  ini_date, end_date) {
       aes( x = slot_time, y = num_tweets/ajuste_escala, color="RTs"),
       size =1.3)+
     # Anotamos el máximo de tweets originales/hora
-    geom_text(
+    geom_text_repel(
       data = tweets_original_df %>% top_n(1, num_tweets),
       aes(
         x = slot_time, y = num_tweets * 1.2, 
-        label = paste0("Max. original tweets = ",scales::comma(num_tweets))
+        label = paste0(
+          slot_time,
+          "\n",
+          "Max. original tweets = ",scales::comma(num_tweets)
+        )
       ),
-      nudge_x = 800, 
-      size = 4,
-      nudge_y = 0.00003) +
+      force = 10,
+      max.time = 10,
+      color = "grey50",
+      size = 3.5,
+      vjust = .5,
+      segment.colour = "grey80",
+      show.legend = FALSE
+    ) +
     # Anotamos el máximo de RTs/hora
-    geom_text(
+    geom_text_repel(
       data = tweets_RT_df %>%  top_n(1, num_tweets),
       aes(
-        x = slot_time, y = num_tweets/ajuste_escala *1.1, 
-        label = paste0("Max.RTs = ",scales::comma(num_tweets))
+        x = slot_time,  y = num_tweets/ajuste_escala *1.2, 
+        label = paste0(
+          slot_time,
+          "\n",
+          "Max.RTs = ",scales::comma(num_tweets)
+        )
       ),
-      nudge_x = 800, 
-      size = 4,
-      nudge_y = 0.00003) +
+      force = 10,
+      max.time = 10,
+      color = "grey50",
+      size = 3.5,
+      vjust = .5,
+      segment.colour = "grey80",
+      show.legend = FALSE
+    ) +
     # Ajustamos la escala de tiempo
     scale_x_datetime(
       date_labels = format_time(ini_date, end_date),
