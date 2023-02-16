@@ -7,8 +7,8 @@ params:
     min_followers_influencers: 100000 # Mínimo de followers de un perfil para ser etiquetado
     time_zone: "Europe/Berlin"        # Huso horario
     zoom: FALSE                        # (TRUE/FALSE) TRUE si se desea hacer zoom 
-    date_ini_zoom: "YYYY-MM-AA"       # (Solo si zoom es TRUE) Fecha de inicio del zoom, formato YYYY-MM-AA 
-    date_end_zoom: "YYYY-MM-AA"       # (Solo si zoom es TRUE) Fecha de inicio del zoom, formato YYYY-MM-AA 
+    date_ini_zoom: "YYYY-MM-DD"       # (Solo si zoom es TRUE) Fecha de inicio del zoom, formato YYYY-MM-DD 
+    date_end_zoom: "YYYY-MM-DD"       # (Solo si zoom es TRUE) Fecha de inicio del zoom, formato YYYY-MM-DD 
 ---
 
 ```{r setup, 	echo = TRUE,message = FALSE,	warning = FALSE,include=FALSE, cache = FALSE}
@@ -119,9 +119,6 @@ dataset_name <- params$dataset_name         # Nombre del dataset
 base_title <- params$base_title             # Prefijo del título principal de las gráficas
 min_followers_influencers <- params$min_followers_influencers # Mínimo de followers de un perfil para ser etiquetado
 time_zone <-  params$time_zone              # Huso horario
-zoom <- params$zoom                         # (TRUE/FALSE) TRUE si se desea hacer zoom
-date_ini_zoom <- params$date_ini_zoom       # Fecha de inicio del zoom
-date_end_zoom <- params$date_end_zoom       # Fecha de fin del zoom
 # Gestionamos el entorno de directorios
 data_path <- paste0("../datos/", dataset_name, "/") # Directorio de datos
 img_path <- paste0(data_path,"/images/" )
@@ -172,6 +169,7 @@ if(ARS == TRUE) {
       type_media = col_character(),
       relation = col_character(),
       user_retweeted = col_character(),
+      user_replied = col_character(),  
       first_HT = col_character(),
       lang = col_character(),
       retweet_count = col_number(),
@@ -207,6 +205,7 @@ if(ARS == TRUE) {
       type_media = col_character(),
       relation = col_character(),
       user_retweeted = col_character(),
+      user_replied = col_character(),
       first_HT = col_character(),
       lang = col_character(),
       retweet_count = col_number(),
@@ -220,7 +219,6 @@ max_date <- max(tweets$date)
 min_date <- min(tweets$date)
 num_days <- as.numeric(difftime(max_date ,min_date , units = c("days")))
 slot_time <- ifelse(num_days <= 15, "hour", "day")
-
 ```
 
 ## Adaptamos a la zona horaria y redondeamos por slot time
@@ -230,7 +228,12 @@ slot_time <- ifelse(num_days <= 15, "hour", "day")
 tweets_df <- tweets %>%
   mutate(date = as.POSIXct(floor_date(lubridate::with_tz(date, time_zone),"sec"))) %>%
   mutate(slot_time = as.POSIXct(floor_date(date,slot_time))) %>%
+  mutate(relation_ext = ifelse(is.na(relation),"original", relation))  %>%
   arrange(date)
+# Ordenamos las relaciones 
+order_relation <- c("original", "quoted", "reply", "RT")
+tweets_df$relation_ext <- factor(tweets_df$relation_ext,levels = order_relation )
+color_relation <- c("RT"="purple", "reply"="steelblue4", "quoted"="seagreen4", "original" = "red4")
 # Calculamos el pico de tweets del slot de tiempo para dimensionar el eje Y de las gráficas
 tweet_peak <- tweets_df %>%
   group_by(slot_time) %>%
@@ -280,7 +283,7 @@ ggsave(paste0(img_path,base_name_file_img,"_tweets_vs_reach_total.png"))
 ### Zoom tweets_vs_reach
 
 ```{r tweets_reach_zoom, echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE, fig.width=9, fig.height=5}
-if(zoom) {
+if(params$zoom) {
   # Llamamos a la función tweets_vs_reach
   p <- tweets_vs_reach(tweets_df , "zoom", params$date_ini_zoom, params$date_end_zoom)
   print(p)
@@ -305,7 +308,7 @@ ggsave(paste0(img_path,base_name_file_img,"_tweets_vs_RT_total.png"))
 ### Zoom tweets_vs_RTs
 
 ```{r tweets_vs_RTs_zoom, echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE, fig.width=9, fig.height=5}
-if(zoom) {
+if(params$zoom) {
   # Llamamos a la función tweets_vs_RTs
   p <- tweets_vs_RTs(tweets_df , "zoom",  params$date_ini_zoom, params$date_end_zoom) 
   print(p)
@@ -347,7 +350,7 @@ ggsave(paste0(img_path,base_name_file_img,"_tweets_vs_lang_total.png"))
 ### Zoom tweets-lang
 
 ```{r tweets_by_lang_zoom, echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE, fig.width=9, fig.height=5}
-if(zoom) {
+if(params$zoom) {
   # Llamamos a la función tweets_by_lang
   p <- tweets_by_lang(tweets_df , "zoom",  params$date_ini_zoom, params$date_end_zoom) 
   print(p)
@@ -396,7 +399,7 @@ ggsave(paste0(img_path,base_name_file_img,"_tweets_vs_hashtags_total.png"))
 ### Zoom tweets-hashtags
 
 ```{r tweets_by_HT_zoom, echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE, fig.width=9, fig.height=5}
-if(zoom) {
+if(params$zoom) {
   # Llamamos a la función tweets_by_lang
   p <- tweets_by_HT(tweets_df , "zoom",  params$date_ini_zoom, params$date_end_zoom) 
   print(p)
@@ -446,7 +449,7 @@ if(ARS == TRUE) {
 ### Zoom tweets-community
 
 ```{r tweets_by_community_zoom, echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE, fig.width=9, fig.height=5}
-if(ARS & zoom) {
+if(ARS & params$zoom) {
   # Llamamos a la función tweets_vs_RTs
   p <- tweets_by_community(tweets_df , "zoom", params$date_ini_zoom, params$date_end_zoom, communities )
   print(p)

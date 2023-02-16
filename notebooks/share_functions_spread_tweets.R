@@ -7,19 +7,17 @@
 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 Summary_tweets <- function(df) {
-  resumen <- df %>%
-    mutate(relation = ifelse(is.na(relation), "original",relation)) 
   p <- ggplot(
-    data = resumen,
-    aes(x = relation)) + 
+    data = df,
+    aes(x = relation_ext)) + 
     geom_bar(
-      aes(y=(..count..)/sum(..count..), fill = relation),
+      aes(y=(..count..)/sum(..count..), fill = relation_ext),
       stat="count",
       alpha = 0.7
     ) +
     geom_text(
       aes(
-        label = paste0(round(..count../sum(..count..)*100,1),"%"),
+        label = paste0(round(..count../sum(..count..)*100,1),"%"), 
         y= ..count../sum(..count..)), 
       size =4.5,
       stat="count",vjust = -0.5
@@ -28,6 +26,8 @@ Summary_tweets <- function(df) {
       labels=scales::percent_format(scale = 100, accuracy = 1),
       expand= c(0,0,0.2,0)
     ) +
+    # Aplicamos color
+    scale_fill_manual(values = color_relation) +
     # Ponemos los títulos
     labs(
       title = paste(base_title, ": summary"),
@@ -61,25 +61,25 @@ tweets_vs_reach <- function(df, periodo,  ini_date, end_date) {
     ungroup() 
   # Buscamos los influencers de cada una de las horas
   tweets_vs_influencer_df <- df %>% 
-    group_by(slot_time) %>%
+    group_by(slot_time,relation_ext) %>%
     summarise(
       reach = sum(followers,na.rm=T),
-      influencer = ifelse(followers >= min_followers_influencers, author, NA),
+      influencer = ifelse(followers >= params$min_followers_influencers, author, NA),
       .groups = 'drop'
     ) %>%
     ungroup() %>%
-    distinct(slot_time, reach, influencer)
+    distinct(slot_time, reach, influencer,relation_ext)
   # Calculamos las dos escalas
   max_tweets <- max(tweets_vs_reach_df$num_tweets,na.rm = TRUE)
   max_reach <- max(tweets_vs_reach_df$reach,na.rm = TRUE)
   ajuste_escala <- max_reach/max_tweets
   limit_y = max_tweets
   #definimos la paleta de color
-  my_color = c("Num. Tweets"= "#33E9FF", "Reach" = "red4")
   p <- ggplot(data = tweets_vs_reach_df) + 
     # Pintamos la evolución de los tweets
     geom_line(
-      aes( x = slot_time, y = num_tweets,  color ="Num. Tweets"),
+      aes( x = slot_time, y = num_tweets),
+      color = "steelblue4",
       size = 1.3
     ) +
     geom_area(
@@ -88,22 +88,24 @@ tweets_vs_reach <- function(df, periodo,  ini_date, end_date) {
       alpha = 0.4) +
     # Pintamos los la evolución del alcance  
     geom_line(
-      aes( x=slot_time,  y= reach/ajuste_escala, color="Reach"),
+      aes( x=slot_time,  y= reach/ajuste_escala),
+      color="red4",
       alpha = 1,
       size =1.2) +
     # Pintamos los influencers
     geom_text_repel(
       data =tweets_vs_influencer_df,
-      aes( x = slot_time,  y = reach/ajuste_escala,  label = influencer), 
+      aes(
+        x = slot_time,
+        y = reach/ajuste_escala,
+        label = influencer,
+        color = relation_ext), 
       ylim = c(0, limit_y*1.5),
       force = 10,
       max.overlaps = 30,
       max.time = 10,
-      color = "grey50",
       size = 3.5,
-      vjust = .5,
-      segment.colour = "grey80",
-      show.legend = FALSE
+      vjust = .5
     ) +
     # Ajustamos la escala de tiempo
     scale_x_datetime(
@@ -123,7 +125,7 @@ tweets_vs_reach <- function(df, periodo,  ini_date, end_date) {
       )
     ) +
     # Aplicamos color
-    scale_color_manual(values = my_color) +
+    scale_color_manual(values = color_relation) +
     # Ponemos los títulos
     labs(
       title = paste(base_title, ": Tweets per",slot_time, "vs. Reach"),
@@ -224,11 +226,11 @@ tweets_vs_RTs <- function(df, periodo,  ini_date, end_date) {
     geom_text_repel(
       data = tweets_RT_df %>%  top_n(1, num_tweets),
       aes(
-        x = slot_time,  y = num_tweets/ajuste_escala *1.2, 
+        x = slot_time, y = num_tweets/ajuste_escala *1.2, 
         label = paste0(
           slot_time,
           "\n",
-          "Max.RTs = ",scales::comma(num_tweets)
+          "Max.RTs = = ",scales::comma(num_tweets)
         )
       ),
       force = 10,
@@ -534,71 +536,79 @@ tweets_by_community <-  function(df, periodo,  ini_date, end_date, communities) 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 accumulated_sites <-  function(df, ini_date, end_date) {
   df <- df %>%
-  filter(relation != "RT" | is.na(relation)) %>%
-  mutate(site = str_extract(urls,"https://[www]*[.\\w-]*"))  %>%
-  filter(
-    site != "https://twitter.com" &
-      site != "https://ift.tt" &
-      site != "https://t.co" &
-      site != "https://bit.ly") %>% 
-  group_by(site,slot_time) %>% 
-  summarise(
-    tweets_count = n()+ sum(retweet_count)
-  ) %>%
-  mutate(cumulative_sum = cumsum(tweets_count)) 
-visible_dates <- as.POSIXct(seq(min(tweets_df$slot_time),max(tweets_df$slot_time), by = time_scale(ini_date, end_date)) )
-limit_x = as.POSIXct(c(min(df$slot_time), max(df$slot_time)+( expand_time(ini_date, end_date, 40))))
-limit_y =  max(df$cumulative_sum) 
-offset <- 2
-max_date <- max(df$slot_time)
-p <- ggplot() + 
-  geom_path(
-    data = df,  
-    aes(x = slot_time, y = cumulative_sum, color = site),
-    size =1.3,
-    show.legend =FALSE
-  ) +
-  geom_text_repel(
-    data = df %>% 
-      top_n(1, cumulative_sum) %>%
-      filter(cumulative_sum > 100),
-    aes(
-      x = slot_time, y = cumulative_sum, color = site,
-      label = paste0(
-        site,
-        "(",
-        format(cumulative_sum, big.mark=".",decimal.mark=","),
-        " ref.)")
-    ), 
-    vjust = 1,
-    size = 4,
-    nudge_x = 40*24*60*60, # Ajuste eje x
-    nudge_y = 0.005,  # Ajuste eje y
-    direction = "y",
-    max.overlaps = 30,
-    segment.size = 0.5,
-    segment.linetype = 2,
-    show.legend =FALSE
-  )+
-  scale_x_datetime(
-    limits=limit_x,
-    breaks = visible_dates,
-    date_labels = format_time(ini_date, end_date)
-  ) +
-  scale_y_continuous(
-    labels = label_number_si(),
+    filter(relation != "RT" | is.na(relation)) %>%
+    mutate(site = str_extract(urls,"https://[www]*[.\\w-]*"))  %>%
+    filter(
+      site != "https://twitter.com" &
+        site != "https://ift.tt" &
+        site != "https://t.co" &
+        site != "https://bit.ly") %>% 
+    group_by(site,slot_time) %>%
+    summarise(
+     tweets_count = n()+ sum(retweet_count)
+    ) %>%
+    mutate(cumulative_sum = cumsum(tweets_count)) 
+  top_sites <- df %>%
+    group_by(site) %>%
+    summarise(
+      total = sum(tweets_count),
+      .groups = "drop"
+    ) %>%
+    arrange (desc(total)) %>%
+    head (15)
+  visible_dates <- as.POSIXct(seq(min(tweets_df$slot_time),max(tweets_df$slot_time), by = time_scale(ini_date, end_date)) )
+  limit_x = as.POSIXct(c(min(df$slot_time), max(df$slot_time)+( expand_time(ini_date, end_date, 50))))
+  limit_y =  max(df$cumulative_sum) 
+  offset <- 2
+  max_date <- max(df$slot_time)
+  p <- ggplot() + 
+    geom_path(
+      data = df %>% filter (site %in% top_sites$site),  
+      aes(x = slot_time, y = cumulative_sum, color = site),
+      size =1.3,
+      show.legend =FALSE
+    ) +
+    geom_text_repel(
+      data = df  %>%
+        top_n(1, cumulative_sum) %>%
+        filter (site %in% top_sites$site),
+      aes(
+        x = slot_time, y = cumulative_sum, color = site,
+        label = paste0(
+          site,
+          "(",
+          format(cumulative_sum, big.mark=".",decimal.mark=","),
+          " ref.)")
+      ), 
+      vjust = 1,
+      size = 4,
+      nudge_x =  expand_time(min_date,max_date, 10), # Ajuste eje x
+      nudge_y = 0.005,  # Ajuste eje y
+      direction = "y",
+      max.overlaps = 30,
+      segment.size = 0.5,
+      segment.linetype = 2,
+      show.legend =FALSE
+    )+
+    scale_x_datetime(
+      limits=limit_x,
+      breaks = visible_dates,
+      date_labels = format_time(ini_date, end_date)
+    ) +
+    scale_y_continuous(
+     labels = label_number_si(),
     limits= c(0,limit_y*1.3 ),
     expand= c(0,0)
-  ) +
-  labs(
-    title = paste0(base_title, ": cumulative site mentions per ",slot_time),
-    x = "", 
-    y = "cumulative referrals",
-    color=""
-  ) +
-  guides(color=guide_legend(ncol=2)) +
-  my_theme() +
-  theme( legend.position="top")
+    ) +
+    labs(
+      title = paste0(base_title, ": cumulative site mentions per ",slot_time),
+      x = "", 
+      y = "cumulative referrals",
+      color=""
+    ) +
+    guides(color=guide_legend(ncol=2)) +
+    my_theme() +
+    theme( legend.position="top")
   return(p)
 }
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #

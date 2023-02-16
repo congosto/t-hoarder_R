@@ -5,12 +5,12 @@ output:
   html_document:
     df_print: paged
 params:
-    dataset_name: "xxxxxxxxxx"     # Nombre del dataset
-    base_title: "xxxxxxxxxxxx"     # Prefijo del título principal de las gráficas
+    dataset_name: "xxxxxxxxx"     # Nombre del dataset
+    base_title: "xxxxxxxxxxx"     # Prefijo del título principal de las gráficas
     time_zone: "Europe/Berlin"     # Huso horario
     zoom: FALSE                    # (TRUE/FALSE) TRUE si se desea hacer zoom 
-    date_ini_zoom: "YYYY-MM-AA"    # (Solo si zoom es TRUE) Fecha de inicio del zoom, formato YYYY-MM-AA 
-    date_end_zoom: "YYYY-MM-AA"    # (Solo si zoom es TRUE) Fecha de inicio del zoom, formato YYYY-MM-AA 
+    date_ini_zoom: "YYYY-MM-DD"       # (Solo si zoom es TRUE) Fecha de inicio del zoom, formato YYYY-MM-DD 
+    date_end_zoom: "YYYY-MM-DD"       # (Solo si zoom es TRUE) Fecha de inicio del zoom, formato YYYY-MM-DD 
 ---
 
 ```{r setup, 	echo = FALSE,message = FALSE,	warning = FALSE,include=FALSE, cache = FALSE}
@@ -103,9 +103,6 @@ source("share_functions_profiling_user.R")    # Funciones de visualización del 
 dataset_name <- params$dataset_name         # Nombre del dataset
 base_title <- params$base_title             # Prefijo del título principal de las gráficas
 time_zone <-  params$time_zone              # Huso horario
-zoom <- params$zoom                         # (TRUE/FALSE) TRUE si se desea hacer zoom 
-date_ini_zoom <- params$date_ini_zoom       # Fecha de inicio del zoom
-date_end_zoom <- params$date_end_zoom       # Fecha de fin del zoom
 data_path <- paste0("../datos/", dataset_name, "/") # Directorio de datos
 name_file_in <- paste0(data_path,dataset_name,".csv")
 img_path <- paste0(data_path,"/images/" )
@@ -153,20 +150,16 @@ tweets <- read_csv(
 ```{r set_time, echo=FALSE}
 tweets_df <- tweets %>%
   mutate(date = as.POSIXct(date, tz = "UTC")) %>% #ajustamos TZ
-  mutate(
-    relation = ifelse(
-      (relation == 'reply' & author == user_replied),
-      'thread', relation )
-  ) %>% #detectamos los hilos
-  mutate(relation = ifelse(is.na(relation), "original",relation)) %>%
+  mutate(relation_ext = ifelse(is.na(relation),"original", relation))  %>%
   mutate( slot_time= as.POSIXct(floor_date(lubridate::with_tz(date, "Europe/Berlin"),"day"))) %>%
   mutate(hour_tweet= hour(lubridate::with_tz(date, "Europe/Berlin")))
 date_ini <- min(tweets$date)
 date_end <- max(tweets$date)
 num_days <- as.numeric(difftime(date_end ,date_end , units = c("days")))
-# Ordenamos las relaciones para las leyendas
-order_relation <- c("RT","reply","quoted","thread","original")
-tweets_df$relation <- factor(tweets_df$relation,levels = order_relation ) 
+# Ordenamos las relaciones 
+order_relation <- c("original", "quoted", "reply", "RT")
+tweets_df$relation_ext <- factor(tweets_df$relation_ext,levels = order_relation )
+color_relation <- c("RT"="purple", "reply"="steelblue4", "quoted"="seagreen4", "original" = "red4")
 ```
 
 ## Rutina horaria de publicación por relación
@@ -189,8 +182,8 @@ ggsave(paste0(img_path,base_name_file_img, "_daily_routine_total.png"))
 -   Eje Y los días, eje X las horas
 
 ```{r daily_routine_zoom, echo=FALSE, fig.height=12, fig.width=9, message=FALSE, warning=FALSE, paged.print=FALSE}
-if(zoom) {
-  p<- daily_routine(tweets_df, date_ini_zoom, date_end_zoom, time_zone) 
+if(params$zoom) {
+  p<- daily_routine(tweets_df, params$date_ini_zoom, params$date_end_zoom, time_zone) 
   print(p)
   # Salvamos la gráfica en un archivo
   ggsave(paste0(img_path,base_name_file_img, "_daily_routine_zoom.png"))
@@ -217,8 +210,8 @@ ggsave(paste0(img_path,base_name_file_img, "_daily_activity_total.png"))
 -   Linea temporal de publicación por tipo de tweet
 
 ```{r daily_activity_zoom, echo=FALSE, fig.width=9, fig.height=5, message=FALSE, warning=FALSE, paged.print=FALSE}
-if(zoom) {
-  p <- daily_activity(tweets_df,  date_ini_zoom, date_end_zoom)
+if(params$zoom) {
+  p <- daily_activity(tweets_df,  params$date_ini_zoom, params$date_end_zoom)
   print(p)
   # Salvamos la gráfica en un archivo
   ggsave(paste0(img_path,base_name_file_img, "_daily_activity_zoom.png"))
@@ -253,7 +246,7 @@ ggsave(paste0(img_path,base_name_file_img, "_tweets_vs_fav_total.png"))
 #### Zoom
 
 ```{r impact_fav_zoom, echo=FALSE, fig.width=9, fig.height=5, message=FALSE, warning=FALSE, paged.print=FALSE}
-if(zoom) {
+if(params$zoom) {
   my_color <- c("Num. original tweets" = "#33E9FF", "Fav" = "red4")
   p <- impact_tweets(tweets_df, params$date_ini_zoom, params$date_end_zoom, "Fav", my_color)
   print(p)
@@ -277,7 +270,7 @@ ggsave(paste0(img_path,base_name_file_img, "_tweets_vs_RTs_total.png"))
 #### Zoom
 
 ```{r impact_rt_zoom, echo=FALSE, fig.width=9, fig.height=5, message=FALSE, warning=FALSE, paged.print=FALSE}
-if(zoom) {
+if(params$zoom) {
   my_color <- c("Num. original tweets" = "#33E9FF", "RTs" = "red4")
   p <- impact_tweets(tweets_df, params$date_ini_zoom, params$date_end_zoom, "RTs", my_color)
   print(p)
@@ -300,7 +293,7 @@ ggsave(paste0(img_path,base_name_file_img, "_tweets_vs_replies_total.png"))
 #### Zoom
 
 ```{r impact_replies_zoom, echo=FALSE, fig.width=9, fig.height=5, message=FALSE, warning=FALSE, paged.print=FALSE}
-if(zoom) {
+if(params$zoom) {
   my_color <- c("Num. original tweets" = "#33E9FF", "Replies" = "red4")
   p <- impact_tweets(tweets_df, params$date_ini_zoom, params$date_end_zoom, "Replies", my_color)
   print(p)
@@ -324,7 +317,7 @@ ggsave(paste0(img_path,base_name_file_img, "_tweets_vs_quotes_total.png"))
 #### Zoom
 
 ```{r impact_quotes_zoom, echo=FALSE, fig.width=9, fig.height=5, message=FALSE, warning=FALSE, paged.print=FALSE}
-if(zoom) {
+if(params$zoom) {
   my_color <- c("Num. original tweets" = "#33E9FF", "Quotes" = "red4")
   p <- impact_tweets(tweets_df, params$date_ini, params$date_end, "Quotes", my_color)
   print(p)
@@ -347,7 +340,7 @@ ggsave(paste0(img_path,base_name_file_img, "_tweets_vs_impresions.png"))
 #### Zoom
 
 ```{r impact_impresions_zoom, echo=FALSE, fig.width=9, fig.height=5, message=FALSE, warning=FALSE, paged.print=FALSE}
-if(zoom & params$date_end_zoom >= "2022-12-15") {
+if(params$zoom & params$date_end_zoom >= "2022-12-15") {
   my_color <- c("Num. original tweets" = "#33E9FF", "Impresions" = "red4")
   p <- impact_tweets(tweets_df, params$date_ini_zoom, params$date_end_zoom, "Impresions", my_color)
   print(p)
@@ -370,7 +363,7 @@ ggsave(paste0(img_path,base_name_file_img, "_endgadgement_total.png"))
 #### Zoom
 
 ```{r Endgadgement_zoom, echo=FALSE, fig.width=9, fig.height=5, message=FALSE, warning=FALSE, paged.print=FALSE}
-if(zoom & params$date_end_zoom >= "2022-12-15") {
+if(params$zoom & params$date_end_zoom >= "2022-12-15") {
   p <- endgadgement_tweets(tweets_df, params$date_ini_zoom, params$date_end_zoom)
   print(p)
   # Salvamos la gráfica en un archivo
@@ -395,7 +388,7 @@ ggsave(paste0(img_path,base_name_file_img, "_words_frequency_total.png"))
 
 
 ```{r frecuency_words_zoom, fig.height=5, fig.width=5}
-if(zoom) {
+if(params$zoom) {
   p <- words_frequency(tweets_df,params$date_ini_zoom, params$date_end_zoom)
   print(p)
   # Salvamos la gráfica en un archivo
@@ -416,7 +409,7 @@ ggsave(paste0(img_path,base_name_file_img, "_retweets_frequency_total.png"))
 #### Zoom
 
 ```{r frecuency_retweets_total, fig.height=5, fig.width=5}
-if(zoom) {
+if(params$zoom) {
   p <- retweets_frequency(tweets_df, params$date_ini_zoom, params$date_end_zoom)
   print(p)
   # Salvamos la gráfica en un archivo

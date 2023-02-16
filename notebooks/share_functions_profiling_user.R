@@ -9,7 +9,7 @@
 daily_routine <- function(df, date_ini, date_end, time_zone) {
 tweets_horario_df <- df %>% 
   filter(date >= date_ini & date <= date_end) %>%
-  group_by(slot_time,hour_tweet,relation) %>%
+  group_by(slot_time,hour_tweet,relation_ext) %>%
   summarise(
     num_tweets = n(),
     .group = "drop"
@@ -22,7 +22,7 @@ p <- ggplot() +
       x = hour_tweet,
       y= slot_time,
       size = num_tweets,
-      color = relation
+      color = relation_ext
     ),
     alpha =0.7) +
   scale_y_datetime(
@@ -34,6 +34,8 @@ p <- ggplot() +
     sec.axis = dup_axis()
   ) +
   guides(color = guide_legend(nrow=2,override.aes = list(size = 4) ) ) +
+  # Aplicamos color
+  scale_color_manual(values = color_relation) +
   labs(
     title = paste0(base_title,": dayly routine"),
     subtitle = paste0("Time zone:", time_zone),
@@ -58,7 +60,7 @@ p <- ggplot() +
 daily_activity <- function(df, date_ini, date_end){
   tweets_tipo_df <- tweets_df %>% 
     filter(date >= date_ini & date <= date_end) %>%
-    group_by(slot_time,relation) %>%
+    group_by(slot_time,relation_ext) %>%
     summarise(
       num_tweets = n(),
       .groups = "drop"
@@ -79,7 +81,7 @@ daily_activity <- function(df, date_ini, date_end){
       aes(
         x = slot_time,
         y = num_tweets,
-        fill = relation
+        fill = relation_ext
       ),
       size =1, alpha  = 0.7)+
     geom_text_repel(
@@ -107,6 +109,7 @@ daily_activity <- function(df, date_ini, date_end){
       limits= c(0,max_tweets*1.5),
       expan =c(0,0)
     ) +
+    scale_fill_manual(values = color_relation) +
     labs(
       title = paste0(base_title,": Tipo de tweets"),
       x = "",
@@ -127,7 +130,7 @@ daily_activity <- function(df, date_ini, date_end){
 impact_tweets <- function(df, date_ini, date_end, indicator, my_color){
   tweets_impacto_df <- df %>% 
     filter(date >= date_ini & date <= date_end) %>%
-    filter(relation != "RT") %>%
+    filter(relation_ext != "RT") %>%
     group_by(slot_time) %>%
     summarise(
       num_tweets = n(),
@@ -227,7 +230,7 @@ impact_tweets <- function(df, date_ini, date_end, indicator, my_color){
 endgadgement_tweets <- function(df, date_ini, date_end, indicator, my_color){
   tweets_endgadgement_df <- df %>% 
     filter(date >= date_ini & date <= date_end) %>%
-    filter(relation != "RT") %>%
+    filter(relation_ext != "RT") %>%
     group_by(slot_time) %>%
     summarise(
       endgadgement = ifelse(
