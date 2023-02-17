@@ -1,4 +1,3 @@
-
 # T-hoarder_R
 
 Un conjunto de notebooks en R para extraer datos de Twitter y visualizarlos
@@ -24,7 +23,7 @@ Estos **notebooks** trabajan con esta estructura de directorios prefijada.
 
 Al descargar los datos de github con , se descargará esta estructura. Si se opta por otra forma de organizar los datos, los notebooks tendrán que ser modificados.
 
-## Requisitos 
+## Requisitos
 
 Twitter ofrece desde el inicio de su creación un conjunto de APIs (Aplication Programming Interface) que permiten acceder mediante programas a sus datos. Con el tiempo han ido apareciendo nuevas APIs según las necesidades de acceso a la información, algunas gratis y otras de pago. También han ido evolucionando las versiones. Actualmente conviven la V1.1 y la V2.
 
@@ -36,7 +35,7 @@ Para evitar tener que especificar en cada notebook cuales son las claves de acce
 
 ![Ciclo Análisis](https://github.com/congosto/congosto.github.io/raw/master/ciclos_t-hoarder_R.JPG)
 
-### Configurar las credenciales de acceso a la API Standard 
+### Configurar las credenciales de acceso a la API Standard
 
 A las APIs se accede mediante un protocolo OAuth (**O**pen **Auth**orization). Se trata de un protocolo para permitir la autorización de un servicio a otro sin compartir las credenciales de usuario reales, como un nombre de usuario y contraseña.
 
@@ -57,7 +56,7 @@ Para obtener las credenciales que nos permitan trabajar en **Modo usuario** usar
 
 Una vez obtenidas las claves se almacenarán en el **directorio keys** y se ejecutará el **notebook cfg_API_standard.Rmd**. Esto solo habrá que hacerlo una vez. Las credenciales por defecto se guardarán en el directorio keys y serán usadas en adelante por los notebooks de descarga de datos de Twitter.
 
-### Credenciales de acceso a la API Académica 
+### Credenciales de acceso a la API Académica
 
 Cuando Twitter concede el acceso a la API Académica proporciona una **app**. Acedemos a ella desde el [Developer portal](https://developer.twitter.com/). En el caso que no la hubiera creado, la crearemos desde este portal.
 
@@ -80,7 +79,7 @@ Se recomienda que estos ficheros tengan el prefijo "key", el nombre de la app y 
 
 A continuación se ejecutará el **notebook cfg_API_academic.Rmd**. Esto solo habrá que hacerlo una vez. Las credenciales por defecto se guardarán en el directorio keys y serán usadas en adelante por los notebooks de descarga de datos de Twitter.
 
-## Descripción de los notebooks 
+## Descripción de los notebooks
 
 Estos **notebook** permiten la descarga de datos de Twitter y su visualización.
 
@@ -181,9 +180,9 @@ En ambos casos se ofrece la opción de poder hacer zoom en las gráficas especif
     -   Most frequent words
     -   Most frequent retweets
 
-## Ejemplos de búsquedas en Twitter 
+## Recetas para usar T-hoarder_R
 
-### Tipos de consultas 
+### Tipos de consultas
 
 Las consultas no son exactamente igual en la API V1,1 que en la API V2, la primera dejó de actualizarse cuando se liberó la segunda que es donde se incluyen todas las novedades. Con todo, en la V1,1. se pueden hacer consultas avanzadas.
 
@@ -191,24 +190,71 @@ Las consultas no son exactamente igual en la API V1,1 que en la API V2, la prime
 -   [búsqueda avanzada en API standard V1.1](https://www.tweetbinder.com/blog/twitter-advanced-search/)
 -   [Búsquedas en API V2](https://developer.twitter.com/en/docs/twitter-api/tweets/search/integrate/build-a-query)
 
-### Descargas de un trending topic
+### Hay una noticia que se está difundiendo mucho y no sé si es cierta
 
-Al ser datos recientes se pueden obtener tanto con la API standard V1.1, con el cuaderno **search_tweets_API_standard.Rmd** o con la API académica con el cuaderno **search_tweets_API_academic.Rmd**. La query será el TT.
+**Ingredientes**:
 
-### Descarga un evento de larga duración
+-   Probar en la web de Twitter la mejor query para consultar los datos.
+-   Recordar: el que mucho abarca poco aprieta. No más de cuatro OR
+-   Ver cuántos datos se va a descargar con la query (solo API Académica)
+-   Descargar cuanto antes los datos.
+    -   Tengo API académica: search_tweets_API_academic.Rmd
+    -   No tengo API académica: search_tweets_API_standard.Rmd
+
+**Elaboración**:
+
+-   Tengo mucha prisa: Visualizar los datos de forma global:
+
+    -   Para ver la propagación spread_tweets.Rmd
+    -   Para ver el ruido: suspicious_users.Rmd (por hacer)
+    -   Para inspeccionar un usuario: profiling_users.Rmd (por adaptar)
+
+-   Tengo tiempo para analizarlo:
+
+    -   Generar un gdf para analizarlo con Gephi: csv2gdf.Rmd
+    -   Renderizar el grafo en gephi y exportar la tabla de datos en el directorio del dataset. **¡OJO!**, comprobar que se salvan los nodos pulsando en opciones del formulario de exportación
+    -   Clasificar los tweets con classify_tweets.Rmd
+    -   Visualizar los datos de forma global y por comunidades:
+        -   Para ver la propagación spread_tweets.Rmd
+        -   Para ver el ruido: suspicious_users.Rmd (por hacer)
+        -   Para inspeccionar un usuario: profiling_users.Rmd (por adaptar)
+
+### Hay un usuario que es sospechoso
+
+**Ingredientes**:
+
+-   Descargar los datos
+    -   Tengo API académica: search_tweets_API_academic.Rmd (query from:user_name OR to:user_name)
+    -   No tengo API académica: users_tweets_API_standard.Rmd ( Solo hay que dar el user_name).(por hacer)
+
+**Elaboración**:
+
+-   Inspeccionar el usuario: profiling_users.Rmd (si se bajaron los datos con la API estándar, no se podrá generar la gráfica de cambio de nombre)
+
+### Quiero analizar algo de larga duración
 
 (más antiguo de 10 días)
 
-En este caso se utilizará la API Académica V2, con el cuaderno **search_tweets_API_academic.Rmd**. Conviene probar que la query es adecuada y no proporciona falsos positivos.
+**Ingredientes**:
 
-### Perfilar a una cuenta de usuario
+-   Probar en la web de Twitter la mejor query para consultar los datos.
+-   Recordar: el que mucho abarca poco aprieta. No más de cuatro OR
+-   Ver cuántos datos se va a descargar con la query
+-   Descargar los datos.
+    -   Tengo API académica: search_tweets_API_academic.Rmd
+    -   No tengo API académica: No es posible hacerlo
 
-Puede hacerse de dos formas:
+**Elaboración**:
 
--   Con la API standard V1.1 **users_tweets_API_standard.Rmd** que obtendrá los últimos 3.200 tweets publicados por el usuario
--   Con la API API Académica V2 **search_tweets_API_academic.Rmd** con la query "from:usuario", que obtendrá todos los tweets del usuario en el rango de fechas que se especifique
+-   Generar un gdf para analizarlo con Gephi: csv2gdf.Rmd
+-   Renderizar el grafo en gephi y exportar la tabla de datos en el directorio del dataset. **¡OJO!**, comprobar que se salvan los nodos pulsando en opciones del formulario de exportación
+-   Clasificar los tweets con classify_tweets.Rmd
+-   Visualizar los datos de forma global y por comunidades:
+    -   Para ver la propagación spread_tweets.Rmd
+    -   Para ver el ruido: suspicious_users.Rmd (por hacer)
+    -   Para inspeccionar un usuario: profiling_users.Rmd (por adaptar)
 
-## Ejemplos de Visualizaciones 
+## Ejemplos de Visualizaciones
 
 ### De propagación de tweets
 
