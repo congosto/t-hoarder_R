@@ -1,6 +1,46 @@
 # Functions shared by spread_tweet.Rmd
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 #
+# Summary_tweets
+#
+# Bar chart de los tipos de tweets
+#
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+Summary_tweets <- function(df) {
+  p <- ggplot(
+    data = df,
+    aes(x = relation_ext)) + 
+    geom_bar(
+      aes(y=(..count..)/sum(..count..), fill = relation_ext),
+      stat="count",
+      alpha = 0.7
+    ) +
+    geom_text(
+      aes(
+        label = paste0(round(..count../sum(..count..)*100,1),"%"), 
+        y= ..count../sum(..count..)), 
+      size =4.5,
+      stat="count",vjust = -0.5
+    ) + 
+    scale_y_continuous(
+      labels=scales::percent_format(scale = 100, accuracy = 1),
+      expand= c(0,0,0.2,0)
+    ) +
+    # Aplicamos color
+    scale_fill_manual(values = color_relation) +
+    # Ponemos los títulos
+    labs(
+      title = paste(base_title, ": summary"),
+      x = "",
+      y = "% de tweets",
+      fill = "Tweet type"
+    ) +
+    my_theme() 
+  return(p)
+}
+# Functions shared by spread_tweet.Rmd
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+#
 # daily_routine
 #
 # Scatterplot chart de la rutina de publicación
