@@ -32,7 +32,8 @@ Summary_tweets <- function(df) {
     labs(
       title = paste(base_title, ": summary"),
       x = "",
-      y = "% de tweets"
+      y = "% de tweets",
+      fill = "Tweet type"
     ) +
     my_theme() 
   return(p)

@@ -8,7 +8,7 @@ params:
     time_zone: "Europe/Berlin"        # Huso horario
     zoom: FALSE                        # (TRUE/FALSE) TRUE si se desea hacer zoom 
     date_ini_zoom: "YYYY-MM-DD"       # (Solo si zoom es TRUE) Fecha de inicio del zoom, formato YYYY-MM-DD 
-    date_end_zoom: "YYYY-MM-DD"       # (Solo si zoom es TRUE) Fecha de inicio del zoom, formato YYYY-MM-DD 
+    date_end_zoom: "YYYY-MM-DD"       # (Solo si zoom es TRUE) Fecha de inicio del zoom, formato YYYY-MM-DD
 ---
 
 ```{r setup, 	echo = TRUE,message = FALSE,	warning = FALSE,include=FALSE, cache = FALSE}
@@ -229,8 +229,8 @@ tweets_df <- tweets %>%
   mutate(date = as.POSIXct(floor_date(lubridate::with_tz(date, time_zone),"sec"))) %>%
   mutate(slot_time = as.POSIXct(floor_date(date,slot_time))) %>%
   # Para compatibilizar con t-harder_kit
-  mutate(relation_ext = ifelse(is.na(relation) | relation == "None","original", relation))  %>%
-  mutate(relation_ext = ifelse(relation == "quote","quoted", relation_ext))  %>%
+  mutate(relation_ext = ifelse(relation == "quote","quoted", relation))  %>%
+  mutate(relation_ext = ifelse(is.na(relation) | relation == "None","original", relation_ext))  %>%
   arrange(date)
 # Ordenamos las relaciones 
 order_relation <- c("original", "quoted", "reply", "RT")
@@ -413,11 +413,14 @@ if(params$zoom) {
 ## Tweets acumulados por sitio
 
 ```{r spread_urls, echo=FALSE, fig.height=6, fig.width=11, message=FALSE, warning=FALSE, paged.print=FALSE}
-# Llamamos a la función accumulated_sites
-p <- accumulated_sites(tweets_df, min_date, max_date)
-print(p)
-# Salvamos la gráfica en un archivo
-ggsave(filename = paste0(img_path,base_name_file_img,"_cumulative_sites.png"))
+# Comprobamos que el dataset sea de una búsqueda, en streamnig no tiene ese dato
+if("retweet_count" %in% names(tweets_df)) {
+  # Llamamos a la función accumulated_sites
+  p <- accumulated_sites(tweets_df, min_date, max_date)
+  print(p)
+  # Salvamos la gráfica en un archivo
+  ggsave(filename = paste0(img_path,base_name_file_img,"_cumulative_sites.png"))
+}
 
 ```
 
