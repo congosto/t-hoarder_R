@@ -130,7 +130,7 @@ parser_tweets_API_academic <- function(tweets){
     mutate(description = str_replace_all(description, '[\n\r]+',' ')) %>%
     # Quitamos filas repetidas por el join
     group_by(id_tweet) %>% slice(1) %>%
-    # Ordenamos de más antiguos a más recientes
-    arrange(date)
+    # Ordenamos de más recientes a más antiguos
+    arrange( desc(date))
   return(tweet_users_nor_df)
 }

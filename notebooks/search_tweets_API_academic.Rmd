@@ -28,11 +28,11 @@ Estos notebooks trabajan con esta estructura de directorios
                  |
                  +-----notebooks # Se guardan los notebooh en R
                  
-
+nc
 ## Requisitos
 
 -   Disponer de una app Académica
--   Configurar la clave de acceso por defecto. Solo es necesario hacerlo una vez con el cuaderno cfg_API_academic.Rmd. Esto permite comprobar que la calve funciona y evita tener que introducirla como parámetro en los otros cuadernos.
+-   Configurar la clave de acceso por defecto. Solo es necesario hacerlo una vez con el cuaderno cfg_API_academic.Rmd. Esto permite comprobar que la calve fuiona y evita tener que introducirla como parámetro en los otros cuadernos.
 
 ## Importamos librerías
 
@@ -79,6 +79,7 @@ if (!file.exists(key_file)) {
  stop("There is no default keyfile, the notebook cfg_API_academic.Rmd must be run once before")
 }
 temporal_file = "tmp"
+size_block <- 10000
 ```
 
 ## Autenticación en OAuth
@@ -89,31 +90,57 @@ keys <- read.csv (file = key_file, header = FALSE)
 
 ## Descargar Tweets
 
-```{r search_tweets}
+```{r search_tweets, message=FALSE, warning=FALSE}
 start_run_time = Sys.time ()
-# Borramos ficheros temporales
-if (file.exists(temporal_file)) {
- unlink(temporal_file, recursive = TRUE)
- cat("The directory is deleted")
-}
+end_tweets <- paste0(gsub(" ","T",end_time),"z") # Formato para función get_all_tweets
+head_file <- TRUE
+tweets_download <- 0
+ids_download <- tibble(id = character())
 # Descargamos los tweets
-tweets <- get_all_tweets(
-  query = query,
-  start_tweets = paste0(gsub(" ","T",start_time,"T00:00:00z"),"z"), # Formato para función get_all_tweets,
-  end_tweets =  paste0(gsub(" ","T",end_time,"T00:00:00z"),"z"), # Formato para función get_all_tweets
-  n = max_tweets,
-  bind_tweets = TRUE,
-  data_path = temporal_file,
-  bearer_token = keys[1,],
-  context_annotations = TRUE
-)
-# Por cada 100 tweets genera
-#  un fichero json con los tweets que empieza por data_
-#  un fichero json con los datos de los usuarios que empieza por users_
-# Normalizamos lo datos de los tweets
-print (nrow(tweets))
-tweets_nor_df <- parser_tweets_API_academic (tweets)
-write_csv (tweets_nor_df,file_out)
+while (TRUE)
+{
+  # Borramos ficheros temporales
+  if (file.exists(temporal_file)) {
+   unlink(temporal_file, recursive = TRUE)
+  }
+  if (max_tweets - tweets_download < size_block) {
+    size_block <- max_tweets - tweets_download
+  }
+  tweets <- get_all_tweets(
+    query = query,
+    start_tweets = paste0(gsub(" ","T",start_time),"z"), # Formato para función get_all_tweets
+    end_tweets =  end_tweets, # Última fecha recibida
+    n = size_block, # Lo bajamos en bloques
+    bind_tweets = TRUE,
+    data_path = temporal_file,
+    bearer_token = keys[1,],
+    context_annotations = TRUE
+  )
+  # Por cada 100 tweets genera
+  #  un fichero json con los tweets que empieza por data_
+  #  un fichero json con los datos de los usuarios que empieza por users_
+  # Normalizamos lo datos de los tweets
+  print (nrow(tweets))
+  # Guardamos el id del último tweet recibido
+  if (nrow (tweets) == 0 | tweets_download >= max_tweets) {
+    break  # Salinos del while (TRUE)
+  }
+  tweets_nor_df <- parser_tweets_API_academic (tweets)
+  if (head_file) {
+    write_csv (tweets_nor_df,file_out, col_names = head_file)
+  } else {
+      tweets_nor_df <- anti_join(tweets_nor_df,ids_download)
+      write_csv (tweets_nor_df,file_out, append = TRUE, col_names = head_file)
+  }
+  # Actualizamos la última fecha descargada
+  last_date <- min (tweets_nor_df$date)
+  end_tweets <- paste0(gsub(" ","T", last_date))  # Formato para función get_all_tweets
+  # Guardamos los id de los tweets para comprobar que no hay repetidos
+  ids_download <-  tweets_nor_df %>% select (id_tweet)
+  head_file <- FALSE
+  tweets_download <- tweets_download + nrow(tweets_nor_df)
+  print(paste ("--> descargados ",tweets_download, "tweets"))
+}
 end_run_time = Sys.time ()
 print (paste ( "inicio: ",start_run_time))
 print (paste ( "fin: ",end_run_time))
