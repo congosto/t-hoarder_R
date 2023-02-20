@@ -2,13 +2,13 @@
 title: "Spread tweets"
 output: html_document
 params:
-    dataset_name : "xxxxxxxxxx"       # Nombre del dataset
-    base_title : "xxxxxxxxxxxx"       # Prefijo del título principal de las gráficas
-    min_followers_influencers: 100000 # Mínimo de followers de un perfil para ser etiquetado
+    dataset_name : "ohio"       # Nombre del dataset
+    base_title : "Difusión de la catrástofe de Ohio"       # Prefijo del título principal de las gráficas
+    min_followers_influencers: 1000000 # Mínimo de followers de un perfil para ser etiquetado
     time_zone: "Europe/Berlin"        # Huso horario
-    zoom: FALSE                        # (TRUE/FALSE) TRUE si se desea hacer zoom 
-    date_ini_zoom: "YYYY-MM-DD"       # (Solo si zoom es TRUE) Fecha de inicio del zoom, formato YYYY-MM-DD 
-    date_end_zoom: "YYYY-MM-DD"       # (Solo si zoom es TRUE) Fecha de inicio del zoom, formato YYYY-MM-DD 
+    zoom: TRUE                        # (TRUE/FALSE) TRUE si se desea hacer zoom 
+    date_ini_zoom: "2023-02-12 12:00:00"       # (Solo si zoom es TRUE) Fecha de inicio del zoom, formato YYYY-MM-DD 
+    date_end_zoom: "2023-02-14 00:00:00"       # (Solo si zoom es TRUE) Fecha de inicio del zoom, formato YYYY-MM-DD 
 ---
 
 ```{r setup, 	echo = TRUE,message = FALSE,	warning = FALSE,include=FALSE, cache = FALSE}
@@ -72,7 +72,7 @@ Algunas las gráficas están realizadas con una función que permite hacer acota
 
 ## Librerías
 
-```{r libraries, message=FALSE, warning=FALSE}
+```{r libraries, message=FALSE, warning=FALSE, include=FALSE}
 
 if(!"tidyverse" %in% installed.packages()) {install.packages("tidyverse")}
 if(!"lubridate" %in% installed.packages()) {install.packages("lubridate")}
@@ -104,7 +104,7 @@ Sys.setlocale(category = "LC_ALL", locale = "english")
 
 ## Importamos funciones
 
-```{r functions}
+```{r functions, include=FALSE}
 source("share_functions.R")                   # Funciones generales
 source("share_functions_viz.R")               # Funciones generales de visualización
 source("share_functions_spread_tweets.R")     # Funciones de visualización del cuaderno
@@ -112,7 +112,7 @@ source("share_functions_spread_tweets.R")     # Funciones de visualización del 
 
 ## Entorno por defecto
 
-```{r environment}
+```{r environment, include=FALSE}
 ## Entorno por defecto. No tocar salvo que se quiera usar otro entorno
 # Guardamos los parámetros
 dataset_name <- params$dataset_name         # Nombre del dataset
@@ -150,7 +150,7 @@ if(file.exists(img_path)) {
 
 ## Leemos el dataset
 
-```{r read_data}
+```{r read_data, include=FALSE}
 if(ARS == TRUE) {
   # se ha realizado análisis de red, tenemos los tweets clasificados
   tweets <- read_csv(
@@ -223,12 +223,12 @@ slot_time <- ifelse(num_days <= 15, "hour", "day")
 
 ## Adaptamos a la zona horaria y redondeamos por slot time
 
-```{r set_time}
+```{r set_time, include=FALSE}
 # Redondeamos por slot time
 tweets_df <- tweets %>%
   mutate(date = as.POSIXct(floor_date(lubridate::with_tz(date, time_zone),"sec"))) %>%
   mutate(slot_time = as.POSIXct(floor_date(date,slot_time))) %>%
-  mutate(relation_ext = ifelse(is.na(relation),"original", relation))  %>%
+  mutate(relation_ext = ifelse(is.na(relation) | relation == "None","original", relation))  %>%
   arrange(date)
 # Ordenamos las relaciones 
 order_relation <- c("original", "quoted", "reply", "RT")
@@ -250,7 +250,7 @@ tweet_peak <- tweets_df %>%
 
 ## Resumen
 
-```{r resumen, echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE, fig.width=9, fig.height=5}
+```{r resumen, echo=FALSE, fig.height=5, fig.width=9, message=FALSE, warning=FALSE, paged.print=FALSE}
 p <- Summary_tweets(tweets_df)
 print(p)
 # Salvamos la gráfica en un archivo
@@ -271,7 +271,7 @@ Adicionalmente se etiquetan los perfilen que estén en el rango definido como in
 
 ### Periodo total tweets_vs_reach
 
-```{r tweets_reach_total, echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE, fig.width=9, fig.height=5}
+```{r tweets_reach_total, echo=FALSE, fig.height=5, fig.width=9, message=FALSE, warning=FALSE, paged.print=FALSE}
 # Llamamos a la función tweets_vs_reach
 p <- tweets_vs_reach(tweets_df , "total",  min_date, max_date ) 
 print(p)
@@ -282,7 +282,7 @@ ggsave(paste0(img_path,base_name_file_img,"_tweets_vs_reach_total.png"))
 
 ### Zoom tweets_vs_reach
 
-```{r tweets_reach_zoom, echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE, fig.width=9, fig.height=5}
+```{r tweets_reach_zoom, echo=FALSE, fig.height=5, fig.width=9, message=FALSE, warning=FALSE, paged.print=FALSE}
 if(params$zoom) {
   # Llamamos a la función tweets_vs_reach
   p <- tweets_vs_reach(tweets_df , "zoom", params$date_ini_zoom, params$date_end_zoom)
@@ -296,7 +296,7 @@ if(params$zoom) {
 
 ### Periodo total tweets-RTs
 
-```{r tweets_vs_RTs_total, echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE, fig.width=9, fig.height=5}
+```{r tweets_vs_RTs_total, echo=FALSE, fig.height=5, fig.width=9, message=FALSE, warning=FALSE, paged.print=FALSE}
 # Llamamos a la función tweets_vs_RTs
 p <- tweets_vs_RTs(tweets_df , "total",  min_date, max_date) 
 print(p)
@@ -307,7 +307,7 @@ ggsave(paste0(img_path,base_name_file_img,"_tweets_vs_RT_total.png"))
 
 ### Zoom tweets_vs_RTs
 
-```{r tweets_vs_RTs_zoom, echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE, fig.width=9, fig.height=5}
+```{r tweets_vs_RTs_zoom, echo=FALSE, fig.height=5, fig.width=9, message=FALSE, warning=FALSE, paged.print=FALSE}
 if(params$zoom) {
   # Llamamos a la función tweets_vs_RTs
   p <- tweets_vs_RTs(tweets_df , "zoom",  params$date_ini_zoom, params$date_end_zoom) 
@@ -339,7 +339,7 @@ Colores por defecto:
 
 ### Periodo total tweets-lang
 
-```{r tweets_by_lang_total, echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE, fig.width=9, fig.height=5}
+```{r tweets_by_lang_total, echo=FALSE, fig.height=5, fig.width=9, message=FALSE, warning=FALSE, paged.print=FALSE}
 # Llamamos a la función tweets_by_lang
 p <- tweets_by_lang(tweets_df , "total",   min_date, max_date) 
 print(p)
@@ -349,7 +349,7 @@ ggsave(paste0(img_path,base_name_file_img,"_tweets_vs_lang_total.png"))
 
 ### Zoom tweets-lang
 
-```{r tweets_by_lang_zoom, echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE, fig.width=9, fig.height=5}
+```{r tweets_by_lang_zoom, echo=FALSE, fig.height=5, fig.width=9, message=FALSE, warning=FALSE, paged.print=FALSE}
 if(params$zoom) {
   # Llamamos a la función tweets_by_lang
   p <- tweets_by_lang(tweets_df , "zoom",  params$date_ini_zoom, params$date_end_zoom) 
@@ -388,7 +388,7 @@ Colores por defecto:
 
 ### Periodo total tweets-hashtags
 
-```{r tweets_by_HT_total, echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE, fig.width=9, fig.height=5}
+```{r tweets_by_HT_total, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE, fig.width=9, fig.height=5}
 # Llamamos a la función tweets_by_lang
 p <- tweets_by_HT(tweets_df , "total", min_date, max_date) 
 print(p)
@@ -398,7 +398,7 @@ ggsave(paste0(img_path,base_name_file_img,"_tweets_vs_hashtags_total.png"))
 
 ### Zoom tweets-hashtags
 
-```{r tweets_by_HT_zoom, echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE, fig.width=9, fig.height=5}
+```{r tweets_by_HT_zoom, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE, fig.width=9, fig.height=5}
 if(params$zoom) {
   # Llamamos a la función tweets_by_lang
   p <- tweets_by_HT(tweets_df , "zoom",  params$date_ini_zoom, params$date_end_zoom) 
@@ -435,7 +435,7 @@ Las imágenes resultantes se almacenan en un subdirectorio del experimento llama
 
 ### Periodo total tweets-community
 
-```{r tweets_by_community_total, echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE, fig.width=9, fig.height=5}
+```{r tweets_by_community_total, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE, fig.width=9, fig.height=5}
 if(ARS == TRUE) {
   # Llamamos a la función tweets_by_community
   p <- tweets_by_community(tweets_df , "total", min_date, max_date, communities) 
@@ -448,7 +448,7 @@ if(ARS == TRUE) {
 
 ### Zoom tweets-community
 
-```{r tweets_by_community_zoom, echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE, fig.width=9, fig.height=5}
+```{r tweets_by_community_zoom, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE, fig.width=9, fig.height=5}
 if(ARS & params$zoom) {
   # Llamamos a la función tweets_vs_RTs
   p <- tweets_by_community(tweets_df , "zoom", params$date_ini_zoom, params$date_end_zoom, communities )
@@ -460,7 +460,7 @@ if(ARS & params$zoom) {
 
 # Origen de los tweets por comunidades
 
-```{r origen_tweets_by_community, fig.height=10, fig.width=9, message=FALSE, warning=FALSE}
+```{r origen_tweets_by_community, echo=FALSE, fig.height=10, fig.width=9, message=FALSE, warning=FALSE}
 if(ARS) {
   p <-location_users_by_community(tweets_df, communities)
   print(p)
@@ -471,7 +471,7 @@ if(ARS) {
 
 # Contenido de los tweets por comunidades
 
-```{r contenido_tweets_by_community, fig.height=10, fig.width=9, message=FALSE, warning=FALSE}
+```{r contenido_tweets_by_community, echo=FALSE, fig.height=10, fig.width=9, message=FALSE, warning=FALSE}
 if(ARS) {
   p <-words_frequency_by_community(tweets_df, communities)
   print(p)

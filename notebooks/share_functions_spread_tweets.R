@@ -99,7 +99,8 @@ tweets_vs_reach <- function(df, periodo,  ini_date, end_date) {
         x = slot_time,
         y = reach/ajuste_escala,
         label = influencer,
-        color = relation_ext), 
+        color = relation_ext
+      ), 
       ylim = c(0, limit_y*1.5),
       force = 10,
       max.overlaps = 30,
@@ -184,6 +185,7 @@ tweets_vs_RTs <- function(df, periodo,  ini_date, end_date) {
   max_tweets <- max(tweets_original_df$num_tweets,na.rm = TRUE)
   max_RT <- max(tweets_RT_df$num_tweets,na.rm = TRUE)
   ajuste_escala <- max_RT/max_tweets
+  limit_y = max_tweets
   #definimos la paleta de color
   my_color = c("Num. original tweets"= "#33E9FF", "RTs" = "red4")
   p <- ggplot() + 
@@ -204,41 +206,35 @@ tweets_vs_RTs <- function(df, periodo,  ini_date, end_date) {
       aes( x = slot_time, y = num_tweets/ajuste_escala, color="RTs"),
       size =1.3)+
     # Anotamos el máximo de tweets originales/hora
-    geom_text_repel(
+    geom_text(
       data = tweets_original_df %>% top_n(1, num_tweets),
       aes(
-        x = slot_time, y = num_tweets * 1.2, 
+        x = slot_time, y = num_tweets * 1.1, 
         label = paste0(
           slot_time,
           "\n",
           "Max. original tweets = ",scales::comma(num_tweets)
         )
       ),
-      force = 10,
-      max.time = 10,
       color = "grey50",
       size = 3.5,
       vjust = .5,
-      segment.colour = "grey80",
       show.legend = FALSE
     ) +
     # Anotamos el máximo de RTs/hora
-    geom_text_repel(
+    geom_text(
       data = tweets_RT_df %>%  top_n(1, num_tweets),
       aes(
-        x = slot_time, y = num_tweets/ajuste_escala *1.2, 
+        x = slot_time, y = num_tweets/ajuste_escala *1.3, 
         label = paste0(
           slot_time,
           "\n",
-          "Max.RTs = = ",scales::comma(num_tweets)
+          "Max.RTs = ",scales::comma(num_tweets)
         )
       ),
-      force = 10,
-      max.time = 10,
       color = "grey50",
       size = 3.5,
       vjust = .5,
-      segment.colour = "grey80",
       show.legend = FALSE
     ) +
     # Ajustamos la escala de tiempo
@@ -250,7 +246,7 @@ tweets_vs_RTs <- function(df, periodo,  ini_date, end_date) {
     scale_y_continuous(
       name = paste("Num. Original tweets per",slot_time), 
       labels = label_number_si(),
-      limits= c(0,max_tweets*1.3),
+      limits= c(0,limit_y*1.4),
       expand= c(0,0),
       sec.axis = sec_axis(
         trans=(~ . * ajuste_escala), 
