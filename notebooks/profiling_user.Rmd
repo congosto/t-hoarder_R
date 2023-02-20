@@ -412,7 +412,7 @@ if (num_original_tweets > 0) {
     # Salvamos la gráfica en un archivo
     ggsave(paste0(img_path,base_name_file_img, "_tweets_vs_impresions.png"))
   }else{
-    print("There is no quotes counter")
+    print("There is no impresions counter")
   }
 }else{
   print("There are no original tweets") 
@@ -433,7 +433,7 @@ if (num_original_tweets > 0) {
       ggsave(paste0(img_path,base_name_file_img, "_tweets_vs_impresions.png"))
     }
   }else{
-    print("There is no quotes counter")
+    print("There is no impresions counter")
   }
 }else{
   print("There are no original tweets") 
