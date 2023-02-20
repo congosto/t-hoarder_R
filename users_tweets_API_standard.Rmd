@@ -1,0 +1,122 @@
+---
+title: "user tweets con API Standard V1.1"
+output:
+  html_document:
+    df_print: paged
+params:
+    dataset_name : "prueba"            # Nombre del dataset
+    user_name   : "congosto"           # Nombre del perfil del usuario (handle)
+    max_tweets   : 5000                # Máximo número de tweets. 
+---
+
+```{r setup, 	echo = TRUE,message = FALSE,	warning = FALSE,include=FALSE, cache = FALSE}
+
+require("knitr")
+## setting working directory
+opts_knit$set(root.dir = "./")
+```
+
+## Entorno de trabajo
+
+Estos notebooks trabajan con esta estructura de directorios
+
+    dir_raiz ----+-----data      # Se guardan los datos, cada dataset en un directorio independiente
+                 |
+                 +-----keys      # se guardan los ficheros con las claves de acceso. 
+                 |
+                 +-----notebooks # Se guardan los notebooh en R
+                 
+
+## Requisitos
+
+-   Disponer de un usuario Twitter
+-   Haber obtenido los tokenes de usuario con el script [python make_token_Twitter.ipynb](https://github.com/congosto/token_API_V1.1/blob/main/make_token_Twitter.ipynb) disponible en github. Este script se puede ejecutar en el [entorno colab de google](https://colab.research.google.com/).
+-   Configurar la clave de acceso por defecto. Solo es necesario hacerlo una vez con el cuaderno cfg_API_standard.Rmd. Esto permite comprobar que la calve funciona y evita tener que introducirla como parámetro en los otros cuadernos.
+
+## Importamos librerías
+
+```{r libraries}
+if (!"base" %in% installed.packages()) {install.packages("base")}
+if (!"rtweet" %in% installed.packages()) {install.packages("rtweet")}
+if (!"tidyverse" %in% installed.packages()) {install.packages("tidyverse")}
+if (!"svDialogs" %in% installed.packages()) {install.packages("svDialogs")}
+library(base)      # Librerías base de R
+library(rtweet)    # Interfaz con API Twitter V1.1
+library(tidyverse) # Manejo de datos y gráficas
+library(svDialogs) # Cuadros de diálogo y formularios
+locale(date_names = "en", date_format = "%AD", time_format = "%AT",
+  decimal_mark = ".", grouping_mark = ",", tz = "Europe/Berlin",
+  encoding = "UTF-8", asciify = FALSE)
+Sys.setlocale(category = "LC_ALL", locale = "english")
+
+
+```
+
+## Importamos funciones
+
+```{r functions}
+source ("share_functions.R")              # Funciones generales
+source ("share_functions_API_standard.R") # Funciones para la API standard
+```
+
+## Entorno por defecto
+
+```{r environment}
+# Entorno por defecto. No tocar salvo que se quiera usar otro entorno
+dataset_name <- params$dataset_name                 # Nombre del dataset
+user <- params$user                                 # Query para la búsqueda de tweets
+max_tweets <- params$max_tweets                     # Máximo número de tweets. 
+data_path <- paste0("../datos/", dataset_name, "/") # Directorio de datos
+file_out <- paste0(data_path,user,"_tweets.csv")   # Fichero de salida
+# Check si existe ya el dataset
+check_dataset_exist(file_out)
+key_file <- "../keys/key_standard_default.txt"  # Clave por defecto
+if (!file.exists(key_file)) {
+ stop("There is no default keyfile, the notebook cfg_API_standard.Rmd must be run once before")
+}
+```
+
+## Autenticación en OAuth
+
+```{r authentication, message=FALSE}
+#key app
+keys_app_file="https://raw.githubusercontent.com/congosto/t-hoarder_kit/master/keys/taller_datos.key" 
+keys_app = read_csv(keys_app_file)
+keys_user <- read.csv (file = key_file, header = FALSE)
+
+consumer_key <- keys_app$key1[1]
+consumer_secret <- keys_app$key2[1]
+access_token <- keys_user[1,]
+access_secret <- keys_user[2,]
+
+token <- rtweet_bot(
+  api_key = consumer_key,
+  api_secret = consumer_secret,
+  access_token = access_token,
+  access_secret = access_secret
+  )
+```
+
+## Descargar y normalizar tweets
+
+tweets_download
+
+```{r user_tweets, message=TRUE, include=FALSE}
+
+start_run_time = Sys.time ()
+
+tweets <- get_timeline(
+  user = user,
+  n = max_tweets,
+  verbose = TRUE,
+  parse = TRUE,
+  token = token
+)
+tweets_nor_df <- parser_tweets_API_standard (tweets)
+write_csv (tweets_nor_df,file_out)
+end_run_time = Sys.time ()
+print (paste ( "inicio: ",start_run_time))
+print (paste ( "fin: ",end_run_time))
+print (end_run_time-start_run_time)
+
+```
