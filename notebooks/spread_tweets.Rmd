@@ -2,13 +2,13 @@
 title: "Spread tweets"
 output: html_document
 params:
-    dataset_name : "ohio"       # Nombre del dataset
-    base_title : "Difusión de la catrástofe de Ohio"       # Prefijo del título principal de las gráficas
-    min_followers_influencers: 1000000 # Mínimo de followers de un perfil para ser etiquetado
+    dataset_name : "xxxxxxxxxx"       # Nombre del dataset
+    base_title : "xxxxxxxxxxxx"       # Prefijo del título principal de las gráficas
+    min_followers_influencers: 100000 # Mínimo de followers de un perfil para ser etiquetado
     time_zone: "Europe/Berlin"        # Huso horario
-    zoom: TRUE                        # (TRUE/FALSE) TRUE si se desea hacer zoom 
-    date_ini_zoom: "2023-02-12 12:00:00"       # (Solo si zoom es TRUE) Fecha de inicio del zoom, formato YYYY-MM-DD 
-    date_end_zoom: "2023-02-14 00:00:00"       # (Solo si zoom es TRUE) Fecha de inicio del zoom, formato YYYY-MM-DD 
+    zoom: FALSE                        # (TRUE/FALSE) TRUE si se desea hacer zoom 
+    date_ini_zoom: "YYYY-MM-DD"       # (Solo si zoom es TRUE) Fecha de inicio del zoom, formato YYYY-MM-DD 
+    date_end_zoom: "YYYY-MM-DD"       # (Solo si zoom es TRUE) Fecha de inicio del zoom, formato YYYY-MM-DD 
 ---
 
 ```{r setup, 	echo = TRUE,message = FALSE,	warning = FALSE,include=FALSE, cache = FALSE}
