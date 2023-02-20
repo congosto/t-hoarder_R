@@ -228,7 +228,9 @@ slot_time <- ifelse(num_days <= 15, "hour", "day")
 tweets_df <- tweets %>%
   mutate(date = as.POSIXct(floor_date(lubridate::with_tz(date, time_zone),"sec"))) %>%
   mutate(slot_time = as.POSIXct(floor_date(date,slot_time))) %>%
+  # Para compatibilizar con t-harder_kit
   mutate(relation_ext = ifelse(is.na(relation) | relation == "None","original", relation))  %>%
+  mutate(relation_ext = ifelse(relation == "quote","quoted", relation_ext))  %>%
   arrange(date)
 # Ordenamos las relaciones 
 order_relation <- c("original", "quoted", "reply", "RT")
