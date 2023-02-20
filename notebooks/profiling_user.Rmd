@@ -6,7 +6,7 @@ output:
     df_print: paged
 params:
     dataset_name: "xxxxxxxxx"     # Nombre del dataset
-    base_title: "xxxxxxxxxxx"     # Prefijo del título principal de las gráficas
+    user_name: "xxxxxxxxxxx"      # Nombre del perfil de usuario (handle)
     time_zone: "Europe/Berlin"    # Huso horario
     zoom: FALSE                   # (TRUE/FALSE) TRUE si se desea hacer zoom 
     date_ini_zoom: "YYYY-MM-DD"   # (Solo si zoom es TRUE) Fecha de inicio del zoom, formato YYYY-MM-DD 
