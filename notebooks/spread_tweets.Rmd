@@ -74,17 +74,16 @@ Algunas las gráficas están realizadas con una función que permite hacer acota
 
 ```{r libraries, message=FALSE, warning=FALSE, include=FALSE}
 
-if(!"tidyverse" %in% installed.packages()) {install.packages("tidyverse")}
-if(!"lubridate" %in% installed.packages()) {install.packages("lubridate")}
-if(!"ggrepel" %in% installed.packages()) {install.packages("ggrepel")}
-if(!"scales" %in% installed.packages()) {install.packages("scales")}
-if(!"tidytext" %in% installed.packages()) {install.packages("tidytext")}
-if(!"tm" %in% installed.packages()) {install.packages("tm")}
-if(!"ggwordcloud" %in% installed.packages()) {install.packages("ggwordcloud")}
-if(!"RColorBrewer" %in% installed.packages()) {install.packages("RColorBrewer")}
-if(!"ggh4x" %in% installed.packages()) {install.packages("ggh4x")}
-if(!"svDialogs" %in% installed.packages()) {install.packages("svDialogs")}
-library(svDialogs)
+if (!"tidyverse" %in% installed.packages()) {install.packages("tidyverse")}
+if (!"lubridate" %in% installed.packages()) {install.packages("lubridate")}
+if (!"ggrepel" %in% installed.packages()) {install.packages("ggrepel")}
+if (!"scales" %in% installed.packages()) {install.packages("scales")}
+if (!"tidytext" %in% installed.packages()) {install.packages("tidytext")}
+if (!"tm" %in% installed.packages()) {install.packages("tm")}
+if (!"ggwordcloud" %in% installed.packages()) {install.packages("ggwordcloud")}
+if (!"RColorBrewer" %in% installed.packages()) {install.packages("RColorBrewer")}
+if (!"ggh4x" %in% installed.packages()) {install.packages("ggh4x")}
+if (!"ggtext" %in% installed.packages()) {install.packages("ggtext")}
 library(tidyverse)       # Suite para datos y gráficos
 library(lubridate)       # Tratamiento de fechas
 library(ggrepel)         # Ubicación no solapada de textos
@@ -94,7 +93,7 @@ library(tm)              # Para manejos de textos
 library(ggwordcloud)     # Para crear una nube de palabras
 library(RColorBrewer)    # Paleta de colores
 library(ggh4x)           # Color en las facetas
-library(svDialogs)       # Cuadros de diálogo y formularios
+library(ggtext)          # Dar color a los textos de las leyendas
 locale(date_names = "en", date_format = "%AD", time_format = "%AT",
   decimal_mark = ".", grouping_mark = ",", tz = "Europe/Berlin",
   encoding = "UTF-8", asciify = FALSE)
@@ -235,7 +234,7 @@ tweets_df <- tweets %>%
 # Ordenamos las relaciones 
 order_relation <- c("original", "quoted", "reply", "RT")
 tweets_df$relation_ext <- factor(tweets_df$relation_ext,levels = order_relation )
-color_relation <- c("RT"="purple", "reply"="steelblue4", "quoted"="seagreen4", "original" = "red4")
+color_relation <- c("original" = "red4", "quoted"="seagreen4", "reply"="steelblue4", "RT"="purple")
 # Calculamos el pico de tweets del slot de tiempo para dimensionar el eje Y de las gráficas
 tweet_peak <- tweets_df %>%
   group_by(slot_time) %>%
@@ -269,7 +268,7 @@ Adicionalmente se etiquetan los perfilen que estén en el rango definido como in
 
 -   El parámetro es muy bajo y hay tantos perfiles que cumplen la condición que no se Hay que tener en cuenta:
 
--   Si no aparece nugún perfik
+-   Si no aparece ningún perfil
 
 ### Periodo total tweets_vs_reach
 

@@ -62,13 +62,15 @@ tweets_vs_reach <- function(df, periodo,  ini_date, end_date) {
     ungroup() 
   # Buscamos los influencers de cada una de las horas
   tweets_vs_influencer_df <- df %>% 
-    group_by(slot_time,relation_ext) %>%
+    group_by(slot_time) %>%
     summarise(
-      reach = sum(followers,na.rm=T),
+      reach = sum(followers, na.rm = T),
       influencer = ifelse(followers >= params$min_followers_influencers, author, NA),
+      relation_ext = relation_ext,
       .groups = 'drop'
     ) %>%
     ungroup() %>%
+    filter (!is.na (influencer)) %>%
     distinct(slot_time, reach, influencer,relation_ext)
   # Calculamos las dos escalas
   max_tweets <- max(tweets_vs_reach_df$num_tweets,na.rm = TRUE)
@@ -102,9 +104,9 @@ tweets_vs_reach <- function(df, periodo,  ini_date, end_date) {
         label = influencer,
         color = relation_ext
       ), 
-      ylim = c(0, limit_y*1.5),
+      ylim = c(0, limit_y*2),
       force = 10,
-      max.overlaps = 30,
+      max.overlaps = 50,
       max.time = 10,
       size = 3.5,
       vjust = .5
@@ -118,7 +120,7 @@ tweets_vs_reach <- function(df, periodo,  ini_date, end_date) {
     scale_y_continuous(
       name = paste("Num. Tweets per",slot_time), 
       labels = label_number_si(),
-      limits= c(0,limit_y*1.6 ),
+      limits= c(0,limit_y*2 ),
       expand= c(0,0),
       sec.axis = sec_axis(
         trans=(~ . * ajuste_escala), 
@@ -127,7 +129,15 @@ tweets_vs_reach <- function(df, periodo,  ini_date, end_date) {
       )
     ) +
     # Aplicamos color
-    scale_color_manual(values = color_relation) +
+    scale_color_manual(
+      values = color_relation,
+      labels = paste("<span style='color:",
+         color_relation,
+         "'>",
+         order_relation,
+         "</span>"),
+      drop = FALSE
+    ) +
     # Ponemos los títulos
     labs(
       title = paste(base_title, ": Tweets per",slot_time, "vs. Reach"),
@@ -142,7 +152,8 @@ tweets_vs_reach <- function(df, periodo,  ini_date, end_date) {
     ) +
     # Aplicamos template
     my_theme() +
-    theme( legend.position="top",
+    theme( legend.position = "top",
+           legend.text=element_markdown(size=12),
            axis.title.y = element_text(color = "steelblue4", size = 14),
            axis.title.y.right = element_text(color = "red4", size = 14),
            axis.text.y = element_text(color = "steelblue4"),
