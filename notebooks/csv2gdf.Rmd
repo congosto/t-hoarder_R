@@ -4,7 +4,7 @@ output:
   html_document:
     df_print: paged
 params:
-    dataset_name : "kiev"            # Nombre del dataset
+    dataset_name : "xxxxxxxxxxx"            # Nombre del dataset
 ---
 
 ```{r setup, 	echo = TRUE,message = FALSE,	warning = FALSE,include=FALSE, cache = FALSE}
@@ -121,14 +121,14 @@ nodos  <- tweets %>%
   # Cambiamos valores nulos por 0 a n_RT
   mutate(n_RT =ifelse(is.na(n_RT), 0,n_RT)) %>%
   # Sustituimos los NA por 0 para que no proteste Gephi
-  mutate(log_followers = ifelse(is.na(followers),0,followers )) %>%
-  mutate(log_following = ifelse(is.na(following),0,following )) %>%
-  mutate(log_statuses = ifelse(is.na(statuses),0,statuses )) %>%
+  mutate(followers = ifelse(is.na(followers),0,followers )) %>%
+  mutate(following = ifelse(is.na(following),0,following )) %>%
+  mutate(statuses = ifelse(is.na(statuses),0,statuses )) %>%
   # Calculamos el logaritmo en base 10 de las métricas del usuario para que se puedan
   # agrupar en potencias de 10
   mutate(log_followers = ifelse(followers >0, round(log10(followers),0),0 )) %>%
   mutate(log_following = ifelse(following >0, round(log10(following),0),0 )) %>%
-  mutate(log_statuses = ifelse(statuses >0 & !is.na(statuses),  round(log10(statuses)),0),0 ) %>%
+  mutate(log_statuses = ifelse(statuses >0,  round(log10(statuses)),0),0 ) %>%
   # Extraigo el año para que se puedan agrupar por antigüedad
   mutate(year_created_at = year(created_at)) %>%
   # Marco si tiene avatar por defecto
