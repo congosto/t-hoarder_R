@@ -4,8 +4,8 @@ output:
   html_document:
     df_print: paged
 params:
-    dataset_name : "xxxxxxxxx"            # Nombre del dataset
-    query        : "xxxxxxxxxxxxx"       # Query para la búsqueda de tweets
+    dataset_name : "lodeolona"            # Nombre del dataset
+    query        : "#lodeolona"            # Query para la búsqueda de tweets
     max_tweets   : 100000                # Máximo número de tweets. 
 ---
 
@@ -76,7 +76,6 @@ if (!file.exists(key_file)) {
 }
 ```
 
-
 ## Autenticación en OAuth
 
 ```{r authentication, message=FALSE}
@@ -112,7 +111,7 @@ while (TRUE)
   # un desbordamiento cuando hay muchos tweets
   tweets <- search_tweets(
     q = query,
-    n = 100,
+    n = 1000,
     type = "recent",
     retryonratelimit = TRUE,
     include_rts = TRUE,
@@ -121,12 +120,11 @@ while (TRUE)
     parse = TRUE,
     token = token
     )
-  col_NA <- rep(NA, nrow(tweets))
-  # Guardamos el id del último tweet recibido
-
+  # Comprobamos si se han descargado todos los tweets
   if (nrow (tweets) == 0 | tweets_download >= max_tweets) {
     break  # Salinos del while (TRUE)
   }
+  # Guardamos el id del último tweet recibido
   last_tweet <- c(min (tweets$id_str))
   tweets_nor_df <- parser_tweets_API_standard (tweets)
   if (head_file) {

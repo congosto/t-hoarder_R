@@ -72,7 +72,7 @@ parser_tweets_API_standard <- function (tweets){
       created_at,verified,avatar
     )
   # Si es una cita, extraemos los datos
-  if (length(unique(tweets$quoted_status)) >1) {                                            
+  if (!TRUE %in% is.na(tweets$quoted_status)) {                                            
     quote <- lapply(tweets$quoted_status, `[[`, "full_text") %>%
       unlist (recursive = FALSE)
     quoted_id <- lapply(tweets$quoted_status, `[[`, "id_str") %>%
@@ -87,7 +87,7 @@ parser_tweets_API_standard <- function (tweets){
   }
   quoted_df <- data.frame(quote = quote, quoted_id = quoted_id, user_quoted = user_quoted)
   # Si RT, extraemos los datos 
-  if (length(unique(tweets$retweeted_status)) >1) {     
+  if (!TRUE %in% is.na(tweets$quoted_status)) {     
     retweeted_id <- lapply(tweets$retweeted_status, `[[`, "id_str") %>%
       unlist (recursive = FALSE)
     user_retweeted <- lapply(tweets$retweeted_status, `[[`, "user") %>%
