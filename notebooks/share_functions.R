@@ -20,6 +20,12 @@ check_dataset_exist <- function(dataset){
     dir.create(data_path)
     cat(paste(data_path," created\n"))
   }
-  return(params)
 }
-
+check_dates <- function(start_time, end_time ) {
+  if (end_time == "YYYY-MM-DD 00:00:00") {
+    now <- Sys.time() - minutes(5)
+    end_time <- with_tz(now, "UCT")
+  }else{if (end_time < start_time) {stop ("end_time is less than start_time")}
+  }
+  return (end_time)
+}

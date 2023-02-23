@@ -8,7 +8,7 @@ params:
     query        : "xxxxxxxxxxxxx"       # Query para la búsqueda de tweets
     max_tweets   : 100000                # Máximo número de tweets. 
     start_time   : "2006-04-01 00:00:00" # Formato YYYY-MM-DD 00:00:00. Por defecto fecha de creación de Twitter
-    end_time     : "YYYY-MM-DD 00:00:00" # Formato YYYY-MM-DD 00:00:00. Hora GMT
+    end_time     : "YYYY-MM-DD 00:00:00" # Formato YYYY-MM-DD 00:00:00. Por defecto hora actual GMT
 ---
 
 ```{r setup, 	echo = TRUE,message = FALSE,	warning = FALSE,include=FALSE, cache = FALSE}
@@ -92,6 +92,7 @@ keys <- read.csv (file = key_file, header = FALSE)
 
 ```{r search_tweets, message=FALSE, warning=FALSE}
 start_run_time = Sys.time ()
+end_time <- check_dates (params$start_time, params$end_time )
 end_tweets <- paste0(gsub(" ","T",end_time),"z") # Formato para función get_all_tweets
 head_file <- TRUE
 tweets_download <- 0
