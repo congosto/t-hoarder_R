@@ -4,8 +4,8 @@ output:
   html_document:
     df_print: paged
 params:
-    dataset_name : "lodeolona"            # Nombre del dataset
-    query        : "#lodeolona"            # Query para la búsqueda de tweets
+    dataset_name : "xxxxxxxxx"           # Nombre del dataset
+    query        : "xxxxxxxxxxxxx"       # Query para la búsqueda de tweets
     max_tweets   : 100000                # Máximo número de tweets. 
 ---
 
