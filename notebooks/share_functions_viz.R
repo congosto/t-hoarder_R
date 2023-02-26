@@ -125,3 +125,20 @@ expand_time <- function(ini_date,end_date, percentage) {
   expand <- (num_seconds * percentage)/100
   return(expand)
 }
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+#
+# summary
+#
+# Calcular el porcentaje de tipos de tweets
+#
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+summary <- function(df) {
+  summary <- df %>%
+    group_by(relation_ext)  %>%
+    summarise (
+      num_tweets = n(),
+      percent = round (num_tweets / nrow(df) * 100, 1),
+      .group = "drop") %>%
+    ungroup ()
+  return(summary)
+}
