@@ -122,6 +122,7 @@ end_run_time = Sys.time ()
 print (paste ( "inicio: ",start_run_time))
 print (paste ( "fin: ",end_run_time))
 ```
+
 # Tweets day
 
 ```{r tweets_day, echo=TRUE, fig.height=5, fig.width=9, paged.print=FALSE}
@@ -162,6 +163,7 @@ ggplot() +
 ggsave(paste0(img_path,base_name_file_img,"_count_tweets_day.png"))
 ```
 
+# Tweets acumulados
 
 ```{r accumulated tweets, echo=TRUE, fig.height=5, fig.width=9, message=FALSE, warning=FALSE, paged.print=FALSE}
 tweets_df <- tweets_count %>%
