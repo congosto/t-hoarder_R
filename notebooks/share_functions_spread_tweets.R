@@ -51,6 +51,7 @@ tweets_vs_reach <- function(df, periodo,  ini_date, end_date) {
     df <- df %>% 
       filter(date >= ini_date & date <= end_date)
   }
+  summary_tweets <- summary (df)
   # Agrupamos los tweets por hora y calculamos el alcance
   tweets_vs_reach_df <- df %>% 
     group_by(slot_time) %>%
@@ -106,7 +107,7 @@ tweets_vs_reach <- function(df, periodo,  ini_date, end_date) {
       ), 
       ylim = c(0, limit_y*2),
       force = 10,
-      max.overlaps = 50,
+      max.overlaps = 30,
       max.time = 10,
       size = 3.5,
       vjust = .5
@@ -131,10 +132,14 @@ tweets_vs_reach <- function(df, periodo,  ini_date, end_date) {
     # Aplicamos color
     scale_color_manual(
       values = color_relation,
-      labels = paste("<span style='color:",
+      labels = paste(
+        "<span style='color:",
          color_relation,
          "'>",
          order_relation,
+         "(",
+         summary_tweets$percent,
+         "%)",
          "</span>"),
       drop = FALSE
     ) +
@@ -152,12 +157,13 @@ tweets_vs_reach <- function(df, periodo,  ini_date, end_date) {
     ) +
     # Aplicamos template
     my_theme() +
-    theme( legend.position = "top",
-           legend.text=element_markdown(size=12),
-           axis.title.y = element_text(color = "steelblue4", size = 14),
-           axis.title.y.right = element_text(color = "red4", size = 14),
-           axis.text.y = element_text(color = "steelblue4"),
-           axis.text.y.right = element_text(color = "red4")
+    theme(
+      legend.position = "top",
+      legend.text=element_markdown(size=12),
+      axis.title.y = element_text(color = "steelblue4", size = 14),
+      axis.title.y.right = element_text(color = "red4", size = 14),
+      axis.text.y = element_text(color = "steelblue4"),
+      axis.text.y.right = element_text(color = "red4")
     )
   
   return(p)
