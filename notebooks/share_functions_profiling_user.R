@@ -65,7 +65,7 @@ p <- ggplot() +
       size = num_tweets,
       color = relation_ext
     ),
-    alpha =0.7) +
+    alpha =0.5) +
   scale_y_datetime(
     date_labels = format_time_plain(date_ini, date_end),
     date_breaks = time_scale(date_ini, date_end)
@@ -80,7 +80,7 @@ p <- ggplot() +
     values = color_relation,
     labels = paste(
       "<span style='color:",
-      color_relation,
+      rev(color_relation),
       "'>",
       order_relation,
       "(",
