@@ -14,6 +14,8 @@ El paso de parámetros se realiza en la primera casilla del cuaderno. Podría ha
 
 Estos **notebooks** trabajan con esta estructura de directorios prefijada.
 
+Los cuadernos para acceder a los datos (data) y las claves (keys) lo hacen de manera relativa al directorio dónde está el cuaderno. Aunque está configurado que el directorio de trabajo sea el del cuaderno, no siempre funciona. En el caso de que no encuentre los datos se debe configurar "Session / Set Working Directory / To Source File Location".
+
     dir_raiz ----+-----data      # Se guardan los datos, cada dataset en un directorio independiente
                  |
                  +-----keys      # se guardan los ficheros con las claves de acceso. 
@@ -21,7 +23,7 @@ Estos **notebooks** trabajan con esta estructura de directorios prefijada.
                  +-----notebooks # Se guardan los notebooh en R
           
 
-Al descargar los datos de github con , se descargará esta estructura. Si se opta por otra forma de organizar los datos, los notebooks tendrán que ser modificados.
+Al descargar los datos de github con , se descargará esta estructura. Si se opta por otra forma de organizar los datos, los notebooks tendrán que ser modificados en la casilla de "Entorno de Trabajo"
 
 ## Requisitos
 
@@ -175,7 +177,7 @@ En ambos casos se ofrece la opción de poder hacer zoom en las gráficas especif
     -   Replies
     -   Quotes
     -   Impresions
--   **Endgadgement**: Line chart con la evolución de las impresiones
+-   **Engagement**: Line chart con la evolución de las impresiones
 -   **Word cloud**
     -   Most frequent words
     -   Most frequent retweets
@@ -316,9 +318,9 @@ query -\> from:elommusk
 
 ![Ejemplo de tweets vs. Rts](https://github.com/congosto/congosto.github.io/raw/master/elonmusk_tweets_vs_RTs_zoom.png)
 
-#### Endgadgement
+#### Engagement
 
-![Ejemplo de Endgadgement](https://github.com/congosto/congosto.github.io/raw/master/elonmusk_endgadgement_zoom.png)
+![Ejemplo de Engagement](https://github.com/congosto/congosto.github.io/raw/master/elonmusk_engagement_zoom.png)
 
 #### Most frequent words
 
