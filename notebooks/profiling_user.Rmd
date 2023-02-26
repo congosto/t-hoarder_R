@@ -54,7 +54,7 @@ Las visualizaciones disponibles son:
     -   Replies
     -   Quotes
     -   impresions
--    **Endgadgement**: Line chart con la evolución de las impresiones
+-    **engagement**: Line chart con la evolución de las impresiones
 -   **Word cloud**
     -   Most frequent words
     -   Most frequent retweets
@@ -71,6 +71,7 @@ if(!"tm" %in% installed.packages()) {install.packages("tm")}
 if(!"ggwordcloud" %in% installed.packages()) {install.packages("ggwordcloud")}
 if(!"RColorBrewer" %in% installed.packages()) {install.packages("RColorBrewer")}
 if(!"ggh4x" %in% installed.packages()) {install.packages("ggh4x")}
+if (!"ggtext" %in% installed.packages()) {install.packages("ggtext")}
 library(tidyverse)       # Suite para datos y gráficos
 library(lubridate)       # Tratamiento de fechas
 library(ggrepel)         # Ubicación no solapada de textos
@@ -80,6 +81,7 @@ library(tm)              # Para manejos de textos
 library(ggwordcloud)     # Para crear una nube de palabras
 library(RColorBrewer)    # Paleta de colores
 library(ggh4x)           # Color en las facetas
+library(ggtext)          # Dar color a los textos de las leyendas
 locale(date_names = "en", date_format = "%AD", time_format = "%AT",
   decimal_mark = ".", grouping_mark = ",", tz = "Europe/Berlin",
   encoding = "UTF-8", asciify = FALSE)
@@ -440,18 +442,18 @@ if (num_original_tweets > 0) {
 }
 ```
 
-## Endgadgement
+## engagement
 
 #### Periodo total
 
-```{r endgadgement_total, echo=FALSE, fig.width=9, fig.height=5, message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r engagement_total, echo=FALSE, fig.width=9, fig.height=5, message=FALSE, warning=FALSE, paged.print=FALSE}
 if (num_original_tweets > 0) {
   # Con la API Standard no da este dato
   if (length(unique(tweets_df$quote_count)) > 1) {
-    p <- endgadgement_tweets(tweets_df, date_ini, date_end)
+    p <- engagement_tweets(tweets_df, date_ini, date_end)
     print(p)
     # Salvamos la gráfica en un archivo
-    ggsave(paste0(img_path,base_name_file_img, "_endgadgement_total.png"))
+    ggsave(paste0(img_path,base_name_file_img, "_engagement_total.png"))
 }else{
     print("There is no quotes counter")
   }
@@ -462,15 +464,15 @@ if (num_original_tweets > 0) {
 
 #### Zoom
 
-```{r Endgadgement_zoom, echo=FALSE, fig.height=5, fig.width=9, message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r engagement_zoom, echo=FALSE, fig.height=5, fig.width=9, message=FALSE, warning=FALSE, paged.print=FALSE}
 if (num_original_tweets > 0) {
   # Con la API Standard no da este dato
   if (length(unique(tweets_df$quote_count)) > 1) {
     if(params$zoom & params$date_end_zoom >= "2022-12-15") {
-      p <- endgadgement_tweets(tweets_df, params$date_ini_zoom, params$date_end_zoom)
+      p <- engagement_tweets(tweets_df, params$date_ini_zoom, params$date_end_zoom)
       print(p)
      # Salvamos la gráfica en un archivo
-      ggsave(paste0(img_path,base_name_file_img, "_endgadgement_zoom.png"))
+      ggsave(paste0(img_path,base_name_file_img, "_engagement_zoom.png"))
     }
 }else{
     print("There is no quotes counter")

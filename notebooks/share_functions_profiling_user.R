@@ -55,6 +55,7 @@ tweets_horario_df <- df %>%
     .group = "drop"
   ) %>%
   ungroup()
+summary_tweets <- summary (df)
 p <- ggplot() + 
   geom_point(
     data = tweets_horario_df,
@@ -75,7 +76,19 @@ p <- ggplot() +
   ) +
   guides(color = guide_legend(nrow=2,override.aes = list(size = 4) ) ) +
   # Aplicamos color
-  scale_color_manual(values = color_relation) +
+  scale_color_manual(
+    values = color_relation,
+    labels = paste(
+      "<span style='color:",
+      color_relation,
+      "'>",
+      order_relation,
+      "(",
+      summary_tweets$percent,
+      "%)",
+      "</span>"), 
+    drop = FALSE
+  ) +
   labs(
     title = paste0(base_title,": dayly routine"),
     subtitle = paste0("Time zone:", time_zone),
@@ -86,7 +99,8 @@ p <- ggplot() +
   my_theme() +
   theme(
     panel.grid.major.x = element_line(),
-    legend.position="top"
+    legend.position="top",
+    legend.text=element_markdown(size=12)
   )
   return(p)
 }
@@ -115,6 +129,7 @@ daily_activity <- function(df, date_ini, date_end){
     ) %>%
     ungroup()
   max_tweets <- max(tweets_tipo_tot_df$num_tweets,na.rm = TRUE)
+  summary_tweets <- summary (df)
   p <- ggplot() + 
     geom_col(
       data = tweets_tipo_df, 
@@ -149,7 +164,19 @@ daily_activity <- function(df, date_ini, date_end){
       limits= c(0,max_tweets*1.5),
       expan =c(0,0)
     ) +
-    scale_fill_manual(values = color_relation) +
+    scale_fill_manual(
+      values = color_relation,
+      labels = paste(
+        "<span style='color:",
+        color_relation,
+        "'>",
+        order_relation,
+        "(",
+        summary_tweets$percent,
+        "%)",
+        "</span>"), 
+      drop = FALSE
+    ) +
     labs(
       title = paste0(base_title,": Tipo de tweets"),
       x = "",
@@ -157,7 +184,10 @@ daily_activity <- function(df, date_ini, date_end){
       fill=""
      ) +
     my_theme() +
-    theme(legend.position="top")
+    theme(
+      legend.position="top",
+      legend.text=element_markdown(size=12)
+    )
   return(p)
 }
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -262,18 +292,18 @@ impact_tweets <- function(df, date_ini, date_end, indicator, my_color){
 }
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 #
-# endgadgement_tweets
+# engagement_tweets
 #
 # line chart de doble escala con los tweet originales vs impacto
 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-endgadgement_tweets <- function(df, date_ini, date_end, indicator, my_color){
-  tweets_endgadgement_df <- df %>% 
+engagement_tweets <- function(df, date_ini, date_end, indicator, my_color){
+  tweets_engagement_df <- df %>% 
     filter(date >= date_ini & date <= date_end) %>%
     filter(relation_ext != "RT") %>%
     group_by(slot_time) %>%
     summarise(
-      endgadgement = ifelse(
+      engagement = ifelse(
         sum(impression_count) > 0,
         sum(retweet_count)*100/sum(impression_count),
         0
@@ -281,27 +311,27 @@ endgadgement_tweets <- function(df, date_ini, date_end, indicator, my_color){
       .groups = "drop"
     ) %>% 
     ungroup()
-  max_endgadgement <- max(tweets_endgadgement_df$endgadgement,na.rm = TRUE)
-  p <- ggplot(data = tweets_endgadgement_df) + 
+  max_engagement <- max(tweets_engagement_df$engagement,na.rm = TRUE)
+  p <- ggplot(data = tweets_engagement_df) + 
     geom_line(
       aes(
         x=slot_time,
-        y= endgadgement,
-        color = "Endgadgement"
+        y= engagement,
+        color = "engagement"
       ),
       size =1.2,
       alpha=0.8)+
     geom_text(
-      data = tweets_endgadgement_df %>%   
-        top_n(1, endgadgement),
+      data = tweets_engagement_df %>%   
+        top_n(1, engagement),
       aes(
         x = slot_time,
-        y = endgadgement * 1.1, 
+        y = engagement * 1.1, 
         label = paste(
           slot_time,
           "\n(",
-          scales::comma(endgadgement,accuracy = 0.01),
-          "Endgadgement)"
+          scales::comma(engagement,accuracy = 0.01),
+          "engagement)"
         )
       ),
       nudge_x = 800, 
@@ -314,17 +344,17 @@ endgadgement_tweets <- function(df, date_ini, date_end, indicator, my_color){
     ) +
     scale_y_continuous(
       labels = label_number_si(),
-      limits= c(0,max_endgadgement*1.3),
+      limits= c(0,max_engagement*1.3),
       expand= c(0,0)
     ) +
     labs(
       title = paste0(
         base_title,
-        ": Endgadgement per day"
+        ": engagement per day"
       ),
-      subtitle = "endgadgement = (Sum(RTs) * 100) / impresions", 
+      subtitle = "engagement = (Sum(RTs) * 100) / impresions", 
       x = "",
-      y = "Endgadgement per day",
+      y = "engagement per day",
       color=""
     ) +
     my_theme() +
