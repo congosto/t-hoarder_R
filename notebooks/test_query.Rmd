@@ -1,0 +1,210 @@
+---
+title: "test_querys"
+output:
+  html_document:
+    df_print: paged
+params:
+    dataset_name : "xxxxxxxxxx"          # Nombre del dataset
+    query : "xxxxxxx,xxxxx,xxxxxx"       # una o varias queries separadas por comas, una query puede contener OR 
+    base_title : "xxxxxxxxx"             # Prefijo del título principal de las gráficas
+    time_zone: "Europe/Berlin"           # Huso horario
+    start_time   : "2006-04-01 00:00:00" # Formato YYYY-MM-DD 00:00:00. Por defecto fecha de creación de Twitter
+    end_time     : "YYYY-MM-DD 00:00:00" # Formato YYYY-MM-DD 00:00:00. Hora GMT
+---
+```{r setup, 	echo = TRUE,message = FALSE,	warning = FALSE,include=FALSE, cache = FALSE}
+require("knitr")
+## setting working directory
+opts_knit$set(root.dir = "./")
+#
+```
+## Entorno de trabajo
+
+Estos notebooks trabajan con esta estructura de directorios
+
+    dir_raiz ----+-----data      # Se guardan los datos, cada dataset en un directorio independiente
+                 |
+                 +-----keys      # se guardan los ficheros con las claves de acceso. 
+                 |
+                 +-----notebooks # Se guardan los notebooh en R
+  
+  
+## Librerías 
+
+```{r libraries, message=FALSE, warning=FALSE, paged.print=FALSE}
+if (!"academictwitteR" %in% installed.packages()) {install.packages("academictwitteR")}
+if(!"tidyverse" %in% installed.packages()) {install.packages("tidyverse")}
+if(!"scales" %in% installed.packages()) {install.packages("scales")}
+if(!"lubridate" %in% installed.packages()) {install.packages("lubridate")}
+if(!"ggrepel" %in% installed.packages()) {install.packages("ggrepel")}
+library(academictwitteR)  # Interfaz con API Twitter Académiva V2
+library(tidyverse)
+library(scales)
+library(lubridate)
+library(ggrepel)
+locale(date_names = "en", date_format = "%AD", time_format = "%AT",
+  decimal_mark = ".", grouping_mark = ",", tz = "Europe/Berlin",
+  encoding = "UTF-8", asciify = FALSE)
+Sys.setlocale(category = "LC_ALL", locale = "english")
+```
+
+## Importamos funciones
+
+```{r functions, include=FALSE}
+source("share_functions.R")                   # Funciones generales
+source("share_functions_viz.R")               # Funciones generales de visualización
+```
+
+
+## Entorno por defecto
+
+```{r environment}
+## Entorno por defecto. No tocar salvo que se quiera usar otro entorno
+dataset_name <- params$dataset_name    # Nombre del dataset
+query <- params$query                  # Query para la búsqueda de tweets
+base_title <- params$base_title        # Prefijo del título principal de las gráficas
+start_time <- params$start_time        # Formato YYYY-MM-DD. Por defecto fecha de creación de Twitter
+end_time <- params$end_time            # Formato YYYY-MM-DD. Por defecto hora actuual
+data_path <- paste0("../datos/",dataset_name,"/") # Directorio de datos
+file_out <- paste0(data_path,dataset_name,"_count.csv")
+# Check si existe ya el dataset
+check_dataset_exist(file_out)
+key_file <- "../keys/key_academic_default.txt"  # Clave por defecto
+if (!file.exists(key_file)) {
+ stop("There is no default keyfile, the notebook cfg_API_academic.Rmd must be run once before")
+}
+num_days <- as.numeric(difftime(end_time ,start_time , units = c("days")))
+```
+
+## Autenticación en OAuth
+
+```{r authentication}
+keys <- read.csv (file = key_file, header = FALSE)
+```
+
+## Descargar Tweets
+
+```{r search_tweets, message=FALSE, warning=FALSE}
+start_run_time = Sys.time ()
+end_time <- check_dates (params$start_time, params$end_time )
+tweets_count <- data.frame(query = character(), end = character(), start = character(), tweet_count = double ())
+# Descargamos los tweets
+list_queries <- strsplit (query,",")[[1]]
+for ( q in list_queries) {
+  tweets_count_q <- count_all_tweets(
+    query = q,
+    start_tweets = paste0(gsub(" ","T",start_time),"z"),
+    end_tweets = paste0(gsub(" ","T",end_time),"z"),
+    bearer_token = keys[1,],
+    n = num_days,
+    file = NULL,
+    data_path = NULL,
+    export_query = TRUE,
+    bind_tweets = TRUE,
+    granularity = "day",
+    verbose = FALSE
+  )
+  cols_query_df <- data.frame (query = rep(q,nrow(tweets_count_q)))
+  tweets_count_q <- cbind (cols_query_df,tweets_count_q)
+  tweets_count <- rbind(tweets_count, tweets_count_q)
+  write_csv (tweets_count,file_out)
+}
+end_run_time = Sys.time ()
+print (paste ( "inicio: ",start_run_time))
+print (paste ( "fin: ",end_run_time))
+```
+# Tweets day
+
+```{r tweets_day, echo=TRUE, fig.height=5, fig.width=9, paged.print=FALSE}
+tweets_df <- tweets_count %>%
+  mutate(start = as.POSIXct(start, "%Y-%m-%d", tz = "Europe/London")) %>%
+  mutate(end = as.POSIXct(end, "%Y-%m-%d", tz = "Europe/London" )) %>%
+  arrange (start)
+  ini_date <- as.POSIXct(min(tweets_df$start))
+  end_date <- as.POSIXct(max(tweets_df$end))                
+  visible_dates <- as.POSIXct(seq(ini_date,end_date, by = time_scale(ini_date,end_date)))
+  limit_x = as.POSIXct(c(ini_date, end_date + (expand_time(ini_date, end_date, 50))))
+  limit_y =  max(tweets_df$tweet_count) 
+ggplot() + 
+  geom_line(
+    data = tweets_df,
+    aes( x=end, y= tweet_count, color = query),
+    size =1.5) +
+  scale_x_datetime (
+    limits=limit_x,
+    breaks = visible_dates,
+    date_labels = format_time(ini_date, end_date)) +
+  scale_y_continuous( 
+    labels = label_number_si(),
+    limits= c(0,limit_y * 1.2),
+    expand= c(0,0)) +
+  labs(
+    title = paste (base_title , "Tweets by day"),
+    x = "",
+    y = "Num. Tweets by day",
+    color=""
+  ) +
+  guides(color=guide_legend(ncol=3)) +
+  my_theme() +
+  theme( legend.position="top")
+```
+
+
+```{r accumulated tweets, echo=TRUE, fig.height=5, fig.width=9, message=FALSE, warning=FALSE, paged.print=FALSE}
+tweets_df <- tweets_count %>%
+  mutate(start = as.POSIXct(start, "%Y-%m-%d",tz = "Europe/London")) %>%
+  mutate(end = as.POSIXct(end, "%Y-%m-%d", tz = "Europe/London" )) %>%
+  arrange (start) %>%
+  group_by(query) %>% 
+  mutate(cumulative_sum = cumsum(tweet_count)) 
+  ini_date <- as.POSIXct(min(tweets_df$start))
+  end_date <- as.POSIXct(max(tweets_df$end))                
+  visible_dates <- as.POSIXct(seq(ini_date,end_date, by = time_scale(ini_date,end_date)))
+  limit_x = as.POSIXct(c(ini_date, end_date + (expand_time(ini_date, end_date, 50))))
+  limit_y = max(tweets_df$cumulative_sum) 
+ggplot() + 
+  geom_line(
+    data = tweets_df,
+    aes( x=end, y= cumulative_sum, color = query),
+    size =1.5) +
+  geom_text_repel(
+    data = tweets_df %>% 
+      top_n(1, cumulative_sum),
+    aes(x = start, y = cumulative_sum, color = query,
+    label = paste0(
+      query,
+      "(",
+      format(cumulative_sum, big.mark=".", decimal.mark=","),
+      " tweets)")
+      ), 
+    ylim = c(0, limit_y*4),
+    vjust = -1,
+    hjust = -1,
+    size = 4,
+    nudge_x = 1, # Ajuste eje x
+    nudge_y = 0.005,  # Ajuste eje y
+    direction="y",
+    max.overlaps=20,
+    segment.size = 0.5,
+    segment.linetype = 2,
+    show.legend =FALSE) +
+  scale_x_datetime (
+    limits=limit_x,
+    breaks = visible_dates,
+    date_labels = format_time(ini_date, end_date)) +
+  scale_y_continuous( 
+    labels = label_number_si(),
+    limits= c(0,limit_y * 1.4),
+    expand= c(0,0)) +
+  labs(
+    title = paste (base_title , "cumulative tweets by day"),
+    x = "",
+    y = "Num. cumulative tweets by day",
+    color=""
+  ) +
+  guides(color=guide_legend(ncol=3)) +
+  my_theme() +
+  theme( legend.position="top")
+```
+
+
+
