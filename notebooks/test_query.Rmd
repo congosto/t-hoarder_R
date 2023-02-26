@@ -4,12 +4,13 @@ output:
   html_document:
     df_print: paged
 params:
+    dataset_name : "mercarroba"          # Nombre del dataset
     dataset_name : "xxxxxxxxxx"          # Nombre del dataset
     query : "xxxxxxx,xxxxx,xxxxxx"       # una o varias queries separadas por comas, una query puede contener OR 
     base_title : "xxxxxxxxx"             # Prefijo del título principal de las gráficas
     time_zone: "Europe/Berlin"           # Huso horario
     start_time   : "2006-04-01 00:00:00" # Formato YYYY-MM-DD 00:00:00. Por defecto fecha de creación de Twitter
-    end_time     : "YYYY-MM-DD 00:00:00" # Formato YYYY-MM-DD 00:00:00. Hora GMT
+    end_time     : "YYYY-MM-DD 00:00:00" # Formato YYYY-MM-DD 00:00:00. por defecto, hora GMT actual
 ---
 ```{r setup, 	echo = TRUE,message = FALSE,	warning = FALSE,include=FALSE, cache = FALSE}
 require("knitr")
@@ -36,11 +37,13 @@ if(!"tidyverse" %in% installed.packages()) {install.packages("tidyverse")}
 if(!"scales" %in% installed.packages()) {install.packages("scales")}
 if(!"lubridate" %in% installed.packages()) {install.packages("lubridate")}
 if(!"ggrepel" %in% installed.packages()) {install.packages("ggrepel")}
+if (!"svDialogs" %in% installed.packages()) {install.packages("svDialogs")}
 library(academictwitteR)  # Interfaz con API Twitter Académiva V2
 library(tidyverse)
 library(scales)
 library(lubridate)
 library(ggrepel)
+library(svDialogs) # Cuadros de diálogo y formularios
 locale(date_names = "en", date_format = "%AD", time_format = "%AT",
   decimal_mark = ".", grouping_mark = ",", tz = "Europe/Berlin",
   encoding = "UTF-8", asciify = FALSE)
@@ -65,12 +68,20 @@ base_title <- params$base_title        # Prefijo del título principal de las gr
 start_time <- params$start_time        # Formato YYYY-MM-DD. Por defecto fecha de creación de Twitter
 end_time <- params$end_time            # Formato YYYY-MM-DD. Por defecto hora actuual
 data_path <- paste0("../datos/",dataset_name,"/") # Directorio de datos
+img_path <- paste0(data_path,"/images/" )
+base_name_file_img <- dataset_name  
 file_out <- paste0(data_path,dataset_name,"_count.csv")
 # Check si existe ya el dataset
 check_dataset_exist(file_out)
 key_file <- "../keys/key_academic_default.txt"  # Clave por defecto
 if (!file.exists(key_file)) {
  stop("There is no default keyfile, the notebook cfg_API_academic.Rmd must be run once before")
+}
+if(file.exists(img_path)) {
+ cat(paste(img_path,"already exists"))
+} else {
+ dir.create(img_path)
+ cat(paste(img_path,"created"))
 }
 end_time <- check_dates (params$start_time, params$end_time )
 num_days <- as.numeric(difftime(end_time ,start_time , units = c("days")))
@@ -118,6 +129,7 @@ print (paste ( "fin: ",end_run_time))
 tweets_df <- tweets_count %>%
   mutate(start = as.POSIXct(start, "%Y-%m-%d", tz = "Europe/London")) %>%
   mutate(end = as.POSIXct(end, "%Y-%m-%d", tz = "Europe/London" )) %>%
+  filter (!(start == end)) %>%
   arrange (start)
   ini_date <- as.POSIXct(min(tweets_df$start))
   end_date <- as.POSIXct(max(tweets_df$end))                
@@ -128,11 +140,13 @@ ggplot() +
   geom_line(
     data = tweets_df,
     aes( x=end, y= tweet_count, color = query),
-    size =1.5) +
+    size =1.5
+    ) +
   scale_x_datetime (
     limits=limit_x,
     breaks = visible_dates,
-    date_labels = format_time(ini_date, end_date)) +
+    date_labels = format_time(ini_date, end_date
+  )) +
   scale_y_continuous( 
     labels = label_number_si(),
     limits= c(0,limit_y * 1.2),
@@ -146,6 +160,7 @@ ggplot() +
   guides(color=guide_legend(ncol=3)) +
   my_theme() +
   theme( legend.position="top")
+ggsave(paste0(img_path,base_name_file_img,"_count_tweets_day.png"))
 ```
 
 
@@ -153,6 +168,7 @@ ggplot() +
 tweets_df <- tweets_count %>%
   mutate(start = as.POSIXct(start, "%Y-%m-%d",tz = "Europe/London")) %>%
   mutate(end = as.POSIXct(end, "%Y-%m-%d", tz = "Europe/London" )) %>%
+  filter (!(start == end)) %>%
   arrange (start) %>%
   group_by(query) %>% 
   mutate(cumulative_sum = cumsum(tweet_count)) 
@@ -168,14 +184,17 @@ ggplot() +
     size =1.5) +
   geom_text_repel(
     data = tweets_df %>% 
-      top_n(1, cumulative_sum),
+      top_n(1, cumulative_sum) %>% 
+      top_n(1, end),
     aes(x = start, y = cumulative_sum, color = query,
     label = paste0(
       query,
       "(",
-      format(cumulative_sum, big.mark=".", decimal.mark=","),
-      " tweets)")
-      ), 
+      format(
+        cumulative_sum, big.mark=".", decimal.mark=","),
+      " tweets)"
+      )
+    ), 
     ylim = c(0, limit_y*4),
     vjust = -1,
     hjust = -1,
@@ -204,6 +223,7 @@ ggplot() +
   guides(color=guide_legend(ncol=3)) +
   my_theme() +
   theme( legend.position="top")
+ggsave(paste0(img_path,base_name_file_img,"_count_tweets_cumulative.png"))
 ```
 
 
