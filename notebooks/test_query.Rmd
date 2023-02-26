@@ -72,6 +72,7 @@ key_file <- "../keys/key_academic_default.txt"  # Clave por defecto
 if (!file.exists(key_file)) {
  stop("There is no default keyfile, the notebook cfg_API_academic.Rmd must be run once before")
 }
+end_time <- check_dates (params$start_time, params$end_time )
 num_days <- as.numeric(difftime(end_time ,start_time , units = c("days")))
 ```
 
@@ -85,7 +86,6 @@ keys <- read.csv (file = key_file, header = FALSE)
 
 ```{r search_tweets, message=FALSE, warning=FALSE}
 start_run_time = Sys.time ()
-end_time <- check_dates (params$start_time, params$end_time )
 tweets_count <- data.frame(query = character(), end = character(), start = character(), tweet_count = double ())
 # Descargamos los tweets
 list_queries <- strsplit (query,",")[[1]]
