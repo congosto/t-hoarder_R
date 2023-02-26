@@ -4,7 +4,6 @@ output:
   html_document:
     df_print: paged
 params:
-    dataset_name : "mercarroba"          # Nombre del dataset
     dataset_name : "xxxxxxxxxx"          # Nombre del dataset
     query : "xxxxxxx,xxxxx,xxxxxx"       # una o varias queries separadas por comas, una query puede contener OR 
     base_title : "xxxxxxxxx"             # Prefijo del título principal de las gráficas
