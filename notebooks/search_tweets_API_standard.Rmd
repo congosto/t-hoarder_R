@@ -6,7 +6,7 @@ output:
 params:
     dataset_name : "xxxxxxxxx"           # Nombre del dataset
     query        : "xxxxxxxxxxxxx"       # Query para la búsqueda de tweets
-    max_tweets   : 100000                # Máximo número de tweets. 
+    max_tweets   : 100000                # Máximo número de tweets.
 ---
 
 ```{r setup, 	echo = TRUE,message = FALSE,	warning = FALSE,include=FALSE, cache = FALSE}
@@ -105,6 +105,7 @@ start_run_time = Sys.time ()
 last_tweet <- NULL
 head_file <- TRUE
 tweets_download <- 0
+Attempts <- 0
 while (TRUE)
 {
   # Bajamos los datos de 100 en 100 tweets para ir salvándolos en un fichero y evitar
@@ -121,19 +122,29 @@ while (TRUE)
     token = token
     )
   # Comprobamos si se han descargado todos los tweets
-  if (nrow (tweets) == 0 | tweets_download >= max_tweets) {
+  if (tweets_download >= max_tweets) {
     break  # Salinos del while (TRUE)
   }
-  # Guardamos el id del último tweet recibido
-  last_tweet <- c(min (tweets$id_str))
-  tweets_nor_df <- parser_tweets_API_standard (tweets)
-  if (head_file) {
-    write_csv (tweets_nor_df,file_out, col_names = head_file)
-  } else {write_csv (tweets_nor_df,file_out, append = TRUE, col_names = head_file)
+  if (nrow (tweets) == 0){
+    if (Attempts > 3 ) {
+      break  # Salinos del while (TRUE)
+    }else{
+      rate_limit_wait (endpoint = "/tweets/search/recent",token = token)
+      Attempts <- Attempts +1
     }
-  head_file <- FALSE
-  tweets_download <- tweets_download + nrow(tweets)
-  print(paste ("--> descargados ",tweets_download, "tweets"))
+  }else{
+    # Guardamos el id del último tweet recibido
+    Attempts <- 0
+    last_tweet <- c(min (tweets$id_str))
+    tweets_nor_df <- parser_tweets_API_standard (tweets)
+    if (head_file) {
+      write_csv (tweets_nor_df,file_out, col_names = head_file)
+    } else {write_csv (tweets_nor_df,file_out, append = TRUE, col_names = head_file)
+      }
+    head_file <- FALSE
+    tweets_download <- tweets_download + nrow(tweets)
+    print(paste ("--> descargados ",tweets_download, "tweets"))
+  }
 } # while (TRUE)
 end_run_time = Sys.time ()
 print (paste ( "inicio: ",start_run_time))
