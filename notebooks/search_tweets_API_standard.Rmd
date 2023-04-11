@@ -80,7 +80,7 @@ if (!file.exists(key_file)) {
 
 ```{r authentication, message=FALSE}
 #key app
-keys_app_file="https://raw.githubusercontent.com/congosto/t-hoarder_kit/master/keys/taller_datos.key" 
+keys_app_file="https://raw.githubusercontent.com/congosto/t-hoarder_R/main/keys/metroaverias_app.txt" 
 keys_app = read_csv(keys_app_file)
 keys_user <- read.csv (file = key_file, header = FALSE)
 
