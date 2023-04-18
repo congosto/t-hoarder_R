@@ -105,7 +105,7 @@ for ( q in list_queries) {
     start_tweets = paste0(gsub(" ","T",start_time),"z"),
     end_tweets = paste0(gsub(" ","T",end_time),"z"),
     bearer_token = keys[1,],
-    n = num_days,
+    n = num_days +1,
     file = NULL,
     data_path = NULL,
     export_query = TRUE,
@@ -129,30 +129,30 @@ print (paste ( "fin: ",end_run_time))
 tweets_df <- tweets_count %>%
   mutate(start = as.POSIXct(start, "%Y-%m-%d", tz = "Europe/London")) %>%
   mutate(end = as.POSIXct(end, "%Y-%m-%d", tz = "Europe/London" )) %>%
-  filter (!(start == end)) %>%
+  #filter (!(start == end)) %>%
   arrange (start)
   ini_date <- as.POSIXct(min(tweets_df$start))
   end_date <- as.POSIXct(max(tweets_df$end))                
   visible_dates <- as.POSIXct(seq(ini_date,end_date, by = time_scale(ini_date,end_date)))
-  limit_x = as.POSIXct(c(ini_date, end_date + (expand_time(ini_date, end_date, 50))))
+  limit_x = as.POSIXct(c(ini_date, end_date + (expand_time(ini_date, end_date, 1))))
   limit_y =  max(tweets_df$tweet_count) 
 ggplot() + 
   geom_line(
     data = tweets_df,
     aes( x=end, y= tweet_count, color = query),
-    size =1.5
-    ) +
+    size =1.2
+  ) +
   scale_x_datetime (
     limits=limit_x,
     breaks = visible_dates,
-    date_labels = format_time(ini_date, end_date
-  )) +
+    date_labels = format_time(ini_date, end_date)
+  ) +
   scale_y_continuous( 
     labels = label_number_si(),
     limits= c(0,limit_y * 1.2),
     expand= c(0,0)) +
   labs(
-    title = paste (base_title , "Tweets by day"),
+    title = paste0(base_title , ": Tweets by day"),
     x = "",
     y = "Num. Tweets by day",
     color=""
@@ -169,7 +169,7 @@ ggsave(paste0(img_path,base_name_file_img,"_count_tweets_day.png"))
 tweets_df <- tweets_count %>%
   mutate(start = as.POSIXct(start, "%Y-%m-%d",tz = "Europe/London")) %>%
   mutate(end = as.POSIXct(end, "%Y-%m-%d", tz = "Europe/London" )) %>%
-  filter (!(start == end)) %>%
+  #filter (!(start == end)) %>%
   arrange (start) %>%
   group_by(query) %>% 
   mutate(cumulative_sum = cumsum(tweet_count)) 
@@ -187,7 +187,7 @@ ggplot() +
     data = tweets_df %>% 
       top_n(1, cumulative_sum) %>% 
       top_n(1, end),
-    aes(x = start, y = cumulative_sum, color = query,
+    aes(x = end, y = cumulative_sum, color = query,
     label = paste0(
       query,
       "(",
@@ -216,7 +216,7 @@ ggplot() +
     limits= c(0,limit_y * 1.4),
     expand= c(0,0)) +
   labs(
-    title = paste (base_title , "cumulative tweets by day"),
+    title = paste0(base_title , ": cumulative tweets by day"),
     x = "",
     y = "Num. cumulative tweets by day",
     color=""
