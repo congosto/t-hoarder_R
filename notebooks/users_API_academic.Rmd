@@ -97,34 +97,39 @@ append <- FALSE
 
 for (user in users) {
   id_user <- get_user_id(user, bearer_token = keys)
-  if (params$search == "profile") {
-    profile <- get_user_profile (id_user, bearer_token = keys) %>%
-       mutate (net = NA)
-    users_nor_df <- parser_users_API_academic (profile,"NA")
-    write_csv (users_nor_df,paste0 (file_out,"_profiles.csv"), append = append)
-    append = TRUE
+  if (!is.na (id_user)){
+    if (params$search == "profile") {
+      profile <- get_user_profile (id_user, bearer_token = keys) %>%
+         mutate (net = NA)
+      users_nor_df <- parser_users_API_academic (profile,"NA")
+      write_csv (users_nor_df,paste0 (file_out,"_profiles.csv"), append = append)
+      append = TRUE
+    }
+    if (params$search == "favorites") {
+      print (paste("Favorites from", user))
+      tweets <- get_liked_tweets(id_user, bearer_token = keys) %>%
+        mutate (liked_from = user)
+      tweets_nor_df <- parser_tweets_basic_API_academic (tweets)
+      write_csv (tweets_nor_df,paste0 (file_out,"_favorites.csv"), append = append)
+      append = TRUE
+    }
+    if (params$search == "followers") {
+      print (paste("Followers of", user))
+      profile <- get_user_followers (id_user, bearer_token = keys)  %>%
+        mutate (net = user)
+      users_nor_df <- parser_users_API_academic (profile,"follower")
+      write_csv (users_nor_df,paste0 (file_out,"_followers.csv"), append = append)
+      append = TRUE
+    }    
+    if (params$search == "following") {
+      print (paste("Followinf from", user))
+      profile <- get_user_following (id_user, bearer_token = keys) %>%
+        mutate (net = user)
+      users_nor_df <- parser_users_API_academic (profile,"following") 
+      write_csv (users_nor_df,paste0 (file_out,"_following.csv"), append = append)
+      append = TRUE
+    }
   }
-  if (params$search == "favorites") {
-    tweets <- get_liked_tweets(id_user, bearer_token = keys) %>%
-      mutate (liked_from = user)
-    tweets_nor_df <- parser_tweets_basic_API_academic (tweets)
-    write_csv (tweets_nor_df,paste0 (file_out,"_favorites.csv"), append = append)
-    append = TRUE
-  }
-  if (params$search == "followers") {
-    profile <- get_user_followers (id_user, bearer_token = keys)  %>%
-       mutate (net = user)
-    users_nor_df <- parser_users_API_academic (profile,"follower")
-    write_csv (users_nor_df,paste0 (file_out,"_followers.csv"), append = append)
-    append = TRUE
-  }    
-  if (params$search == "following") {
-    profile <- get_user_following (id_user, bearer_token = keys) %>%
-       mutate (net = user)
-    users_nor_df <- parser_users_API_academic (profile,"following") 
-    write_csv (users_nor_df,paste0 (file_out,"_following.csv"), append = append)
-    append = TRUE
-  } 
 }
 end_run_time = Sys.time ()
 print (paste ( "inicio: ",start_run_time))
