@@ -1,3 +1,13 @@
+# Get user fron url quoted
+get_user_quoted <- function (url) {
+  if (!is.na(url)) {
+    part <- str_split_1 (url,"/")
+    return (paste0("@",part[4]))
+  }
+  return (NA)
+}
+get_user_quoted_v <- Vectorize(get_user_quoted)
+
 # shared functions for the standard API
 parser_tweets_API_academic <- function(tweets){  
   # Si no existe el dato "source, se lo añadimos con valor nulo"
@@ -36,8 +46,8 @@ parser_tweets_API_academic <- function(tweets){
     mutate(replied_id =  ifelse(relation == 'reply',id_relation,NA )) %>%
     mutate(quoted_id =  ifelse(relation == 'quoted',id_relation,NA )) %>%
     mutate(user_retweeted = ifelse(relation == 'RT',str_extract(text, '@\\w+'),NA )) %>%
-    mutate(user_replied = ifelse(relation == 'reply',str_extract(text, '@\\w+'),NA )) %>%
-    mutate(user_quoted = NA ) #no podemos extraer este dato
+    mutate(user_replied = ifelse(relation == 'reply',str_extract(text, '@\\w+'),NA ))
+    
   # Extraemos los hashtags, urls expandidas y la multimedia
   col_NA <- rep(NA, nrow(base_df))
   if(!is.null(base_df$entities$hashtags)){
@@ -110,6 +120,8 @@ parser_tweets_API_academic <- function(tweets){
       "created_at" = "account_created_at",
       "avatar" = "profile_image_url"
     ) %>% 
+    # añadimos el handle del usuario citado
+    mutate(user_quoted = ifelse(relation == 'quoted',get_user_quoted_v(urls),NA )) %>%
     # Añadimos el link al tweet
     mutate(link = paste0("https://twitter.com/",author,"/status/",id_tweet)) %>%
     # Seleccionamos solo las columnas que nos interesan
@@ -133,4 +145,62 @@ parser_tweets_API_academic <- function(tweets){
     # Ordenamos de más recientes a más antiguos
     arrange( desc(date))
   return(tweet_users_nor_df)
+}
+# shared functions for the standard API
+parser_tweets_basic_API_academic <- function(tweets){  
+  # Si no existe el dato "source, se lo añadimos con valor nulo"
+  # en la API V2, no es accesible este dato desde el 21-12-2022
+  if(is.null(tweets$source)){ 
+    tweets <-  tweets %>%
+      mutate(source = NA)
+  }
+  tweets_basic_nor_df <-  tweets %>%
+    # Expandimos 
+    unnest(public_metrics,keep_empty = TRUE)  %>%
+    # Re-nombramos columnas para que sean igual que en t-hoarder 
+    rename(
+      "id_tweet" = "id",
+      "date" = "created_at",
+      "app" = "source",
+      "id_user" = "author_id",
+      "favorite_count" = "like_count"
+    ) %>% 
+    mutate(text = str_replace_all(text, '[\n\r]+',' ')) %>%
+    select(
+      id_tweet,date,text,app,id_user,lang, retweet_count,reply_count, quote_count, favorite_count,impression_count
+    )  %>%
+    arrange( desc(date))
+  return(tweets_basic_nor_df)
+}
+parser_users_API_academic <- function(users, relation){  
+users_nor_df <- users %>%
+  unnest(public_metrics,keep_empty = TRUE) %>%
+  rename (
+    "id_user" = "id",
+    "screen_name" = "username",
+    "followers" = "followers_count",
+    "following" = "following_count",
+    "statuses" = "tweet_count",
+    "lists" = "listed_count",
+    "since" = "created_at",
+    "bio" ="description"
+  ) %>%
+  mutate (
+    relation = relation,
+    time_zone = NA,
+    web = NA,
+    avatar = NA, 
+    favorites_count = NA,
+    lang = NA,
+    timestamp = Sys.time ()
+  ) %>%
+  mutate(name = str_replace_all(name, '[\n\r]+',' ')) %>%
+  mutate(location = str_replace_all(location, '[\n\r]+',' ')) %>%
+  mutate(bio = str_replace_all(bio, '[\n\r]+',' ')) %>%
+  select (
+    id_user, screen_name, net, relation, followers,	following,statuses,
+    lists, since,	name,	time_zone, location, web,	avatar,	bio,
+    favorites_count, lang,	verified,	protected, timestamp
+  )
+  return (users_nor_df)
 }
