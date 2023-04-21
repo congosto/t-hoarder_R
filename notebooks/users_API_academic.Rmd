@@ -107,9 +107,9 @@ for (user in users) {
     }
     if (params$search == "favorites") {
       print (paste("Favorites from", user))
-      tweets <- get_liked_tweets(id_user, bearer_token = keys) %>%
-        mutate (liked_from = user)
-      tweets_nor_df <- parser_tweets_basic_API_academic (tweets)
+      tweets <- get_liked_tweets(id_user, bearer_token = keys) 
+      tweets_nor_df <- parser_tweets_basic_API_academic (tweets) %>%
+                mutate (liked_from = user)
       write_csv (tweets_nor_df,paste0 (file_out,"_favorites.csv"), append = append)
       append = TRUE
     }
