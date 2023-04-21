@@ -91,16 +91,10 @@ keys <- read.csv (file = key_file, header = FALSE)
 
 ```{r search_tweets, message=FALSE, warning=FALSE}
 start_run_time = Sys.time ()
-end_time <- check_dates (params$start_time, params$end_time )
-end_tweets <- paste0(gsub(" ","T",end_time),"z") # Formato para función get_all_tweets
 users<-paste(readLines(file_users),collapse=" ") 
 users <-   strsplit(users," ")[[1]]
 append <- FALSE
 
-# Borramos ficheros temporales
-if (file.exists(temporal_file)) {
-  unlink(temporal_file, recursive = TRUE)
-}
 for (user in users) {
   id_user <- get_user_id(user, bearer_token = keys)
   if (params$search == "profile") {
@@ -111,7 +105,7 @@ for (user in users) {
     append = TRUE
   }
   if (params$search == "favorites") {
-    tweets <- get_liked_tweets(id_users, bearer_token = keys) %>%
+    tweets <- get_liked_tweets(id_user, bearer_token = keys) %>%
       mutate (liked_from = user)
     tweets_nor_df <- parser_tweets_basic_API_academic (tweets)
     write_csv (tweets_nor_df,paste0 (file_out,"_favorites.csv"), append = append)
