@@ -52,7 +52,7 @@ El método de acceso a las APIs en este ejemplo será **Modo usuario**
 
 #### Crear credenciales
 
-Para obtener las credenciales que nos permitan trabajar en **Modo usuario** usaremos el script [python make_token_Twitter.ipynb](https://github.com/congosto/token_API_V1.1/blob/main/make_token_Twitter.ipynb) disponible en github. Este script se puede ejecutar en el [entorno colab de google](https://colab.research.google.com/).
+Para obtener las credenciales que nos permitan trabajar en **Modo usuario** usaremos el script [python make_token_Twitter.ipynb](https://github.com/congosto/t-hoarder_R/blob/main/notebooks/make_token_Twitter.ipynb) disponible en github. Este script se puede ejecutar en el [entorno colab de google](https://colab.research.google.com/).
 
 ![guía para crear credenciales](https://github.com/congosto/congosto.github.io/raw/master/crear_credenciales.jpg)
 
