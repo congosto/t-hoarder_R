@@ -129,7 +129,7 @@ print (paste ( "fin: ",end_run_time))
 tweets_df <- tweets_count %>%
   mutate(start = as.POSIXct(start, "%Y-%m-%d", tz = "Europe/London")) %>%
   mutate(end = as.POSIXct(end, "%Y-%m-%d", tz = "Europe/London" )) %>%
-  #filter (!(start == end)) %>%
+  filter (!(start == end)) %>%
   arrange (start)
   ini_date <- as.POSIXct(min(tweets_df$start))
   end_date <- as.POSIXct(max(tweets_df$end))                
@@ -165,14 +165,17 @@ ggsave(paste0(img_path,base_name_file_img,"_count_tweets_day.png"))
 
 # Tweets acumulados
 
-```{r accumulated tweets, echo=TRUE, fig.height=5, fig.width=9, message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r accumulated tweets, echo=TRUE, fig.height=6, fig.width=9, message=FALSE, warning=FALSE, paged.print=FALSE}
 tweets_df <- tweets_count %>%
   mutate(start = as.POSIXct(start, "%Y-%m-%d",tz = "Europe/London")) %>%
   mutate(end = as.POSIXct(end, "%Y-%m-%d", tz = "Europe/London" )) %>%
-  #filter (!(start == end)) %>%
+  filter (!(start == end)) %>%
   arrange (start) %>%
   group_by(query) %>% 
-  mutate(cumulative_sum = cumsum(tweet_count)) 
+  mutate(cumulative_sum = cumsum(tweet_count)) %>%
+  arrange (desc(cumulative_sum))
+  order_query <- unique(tweets_df$query)
+  tweets_df$query <- factor (tweets_df$query, levels = order_query)
   ini_date <- as.POSIXct(min(tweets_df$start))
   end_date <- as.POSIXct(max(tweets_df$end))                
   visible_dates <- as.POSIXct(seq(ini_date,end_date, by = time_scale(ini_date,end_date)))
@@ -182,7 +185,8 @@ ggplot() +
   geom_line(
     data = tweets_df,
     aes( x=end, y= cumulative_sum, color = query),
-    size =1.5) +
+    size =1.5,
+    leyend.show = FALSE) +
   geom_text_repel(
     data = tweets_df %>% 
       top_n(1, cumulative_sum) %>% 
@@ -205,8 +209,7 @@ ggplot() +
     direction="y",
     max.overlaps=20,
     segment.size = 0.5,
-    segment.linetype = 2,
-    show.legend =FALSE) +
+    segment.linetype = 2) +
   scale_x_datetime (
     limits=limit_x,
     breaks = visible_dates,
@@ -221,7 +224,7 @@ ggplot() +
     y = "Num. cumulative tweets by day",
     color=""
   ) +
-  guides(color=guide_legend(ncol=3)) +
+  guides(color=FALSE) +
   my_theme() +
   theme( legend.position="top")
 ggsave(paste0(img_path,base_name_file_img,"_count_tweets_cumulative.png"))
