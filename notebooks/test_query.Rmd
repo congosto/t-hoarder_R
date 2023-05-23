@@ -7,9 +7,10 @@ params:
     dataset_name : "xxxxxxxxxx"          # Nombre del dataset
     query : "xxxxxxx,xxxxx,xxxxxx"       # una o varias queries separadas por comas, una query puede contener OR 
     base_title : "xxxxxxxxx"             # Prefijo del título principal de las gráficas
+    granularity : "day"                  # Unidad de tiempo: hour| day | week | month
     time_zone: "Europe/Berlin"           # Huso horario
     start_time   : "2006-04-01 00:00:00" # Formato YYYY-MM-DD 00:00:00. Por defecto fecha de creación de Twitter
-    end_time     : "YYYY-MM-DD 00:00:00" # Formato YYYY-MM-DD 00:00:00. por defecto, hora GMT actual
+    end_time     : "YYYY-MM-DD 00:00:00" # Formato YYYY-MM-DD 00:00:00. por defecto, hora GMT actual 
 ---
 ```{r setup, 	echo = TRUE,message = FALSE,	warning = FALSE,include=FALSE, cache = FALSE}
 require("knitr")
@@ -83,7 +84,7 @@ if(file.exists(img_path)) {
  cat(paste(img_path,"created"))
 }
 end_time <- check_dates (params$start_time, params$end_time )
-num_days <- as.numeric(difftime(end_time ,start_time , units = c("days")))
+num_lines <- as.integer(difftime(end_time ,start_time , units = c(paste0(params$granularity,"s"))))
 ```
 
 ## Autenticación en OAuth
@@ -105,12 +106,12 @@ for ( q in list_queries) {
     start_tweets = paste0(gsub(" ","T",start_time),"z"),
     end_tweets = paste0(gsub(" ","T",end_time),"z"),
     bearer_token = keys[1,],
-    n = num_days +1,
+    n = num_lines +1,
     file = NULL,
     data_path = NULL,
     export_query = TRUE,
     bind_tweets = TRUE,
-    granularity = "day",
+    granularity = params$granularity,
     verbose = FALSE
   )
   cols_query_df <- data.frame (query = rep(q,nrow(tweets_count_q)))
@@ -125,14 +126,16 @@ print (paste ( "fin: ",end_run_time))
 
 # Tweets day
 
-```{r tweets_day, echo=TRUE, fig.height=5, fig.width=9, paged.print=FALSE}
+```{r tweets_day, echo=TRUE, fig.height=6, fig.width=9, message=FALSE, warning=FALSE, paged.print=FALSE}
 tweets_df <- tweets_count %>%
-  mutate(start = as.POSIXct(start, "%Y-%m-%d", tz = "Europe/London")) %>%
-  mutate(end = as.POSIXct(end, "%Y-%m-%d", tz = "Europe/London" )) %>%
+  mutate(start = as.POSIXct(gsub("T", " ", start), "%Y-%m-%d %H:%M:%0S%z")) %>%
+  mutate(end = as.POSIXct(gsub("T", " ", end), "%Y-%m-%d %H:%M:%0S%z")) %>%
+  mutate(start = lubridate::with_tz(start, params$time_zone)) %>%
+  mutate(end = lubridate::with_tz(end, params$time_zone)) %>%
   filter (!(start == end)) %>%
   arrange (start)
-  ini_date <- as.POSIXct(min(tweets_df$start))
-  end_date <- as.POSIXct(max(tweets_df$end))                
+  ini_date <- as.POSIXct(min(tweets_df$start,na.rm = TRUE))
+  end_date <- as.POSIXct(max(tweets_df$end,na.rm = TRUE))                
   visible_dates <- as.POSIXct(seq(ini_date,end_date, by = time_scale(ini_date,end_date)))
   limit_x = as.POSIXct(c(ini_date, end_date + (expand_time(ini_date, end_date, 1))))
   limit_y =  max(tweets_df$tweet_count) 
@@ -140,7 +143,7 @@ ggplot() +
   geom_line(
     data = tweets_df,
     aes( x=end, y= tweet_count, color = query),
-    size =1.2
+    linewidth =1.2
   ) +
   scale_x_datetime (
     limits=limit_x,
@@ -152,12 +155,12 @@ ggplot() +
     limits= c(0,limit_y * 1.2),
     expand= c(0,0)) +
   labs(
-    title = paste0(base_title , ": Tweets by day"),
+    title = paste0(base_title , ": Tweets by ", params$granularity),
     x = "",
-    y = "Num. Tweets by day",
+    y = paste0("Num. Tweets by ",params$granularity),
     color=""
   ) +
-  guides(color=guide_legend(ncol=3)) +
+  guides(color=guide_legend(ncol=4)) +
   my_theme() +
   theme( legend.position="top")
 ggsave(paste0(img_path,base_name_file_img,"_count_tweets_day.png"))
@@ -167,8 +170,10 @@ ggsave(paste0(img_path,base_name_file_img,"_count_tweets_day.png"))
 
 ```{r accumulated tweets, echo=TRUE, fig.height=6, fig.width=9, message=FALSE, warning=FALSE, paged.print=FALSE}
 tweets_df <- tweets_count %>%
-  mutate(start = as.POSIXct(start, "%Y-%m-%d",tz = "Europe/London")) %>%
-  mutate(end = as.POSIXct(end, "%Y-%m-%d", tz = "Europe/London" )) %>%
+  mutate(start = as.POSIXct(gsub("T", " ", start), "%Y-%m-%d %H:%M:%0S%z")) %>%
+  mutate(end = as.POSIXct(gsub("T", " ", end), "%Y-%m-%d %H:%M:%0S%z")) %>%
+  mutate(start = lubridate::with_tz(start, params$time_zone)) %>%
+  mutate(end = lubridate::with_tz(end, params$time_zone)) %>%
   filter (!(start == end)) %>%
   arrange (start) %>%
   group_by(query) %>% 
@@ -185,7 +190,7 @@ ggplot() +
   geom_line(
     data = tweets_df,
     aes( x=end, y= cumulative_sum, color = query),
-    size =1.5,
+    linewidth =1.5,
     leyend.show = FALSE) +
   geom_text_repel(
     data = tweets_df %>% 
@@ -219,9 +224,9 @@ ggplot() +
     limits= c(0,limit_y * 1.4),
     expand= c(0,0)) +
   labs(
-    title = paste0(base_title , ": cumulative tweets by day"),
+    title = paste0(base_title , ": Tweets by ", params$granularity),
     x = "",
-    y = "Num. cumulative tweets by day",
+    y = paste0("Num. Tweets by ",params$granularity),
     color=""
   ) +
   guides(color=FALSE) +
