@@ -145,6 +145,22 @@ ggplot() +
     aes( x=end, y= tweet_count, color = query),
     linewidth =1.2
   ) +
+  # Anotamos el máximo de tweets originales/hora
+  geom_text(
+    data = tweets_df %>% top_n(1, tweet_count),
+    aes(
+      x = end, y = tweet_count * 1.1, 
+      label = paste0(
+        end,
+        "\n",
+        "Max. tweets = ",scales::comma(tweet_count)
+        )
+      ),
+      color = "grey50",
+      size = 3.5,
+      vjust = .5,
+      show.legend = FALSE
+    ) +
   scale_x_datetime (
     limits=limit_x,
     breaks = visible_dates,
