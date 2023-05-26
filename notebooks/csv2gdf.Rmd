@@ -5,6 +5,7 @@ output:
     df_print: paged
 params:
     dataset_name : "xxxxxxxxxxx"            # Nombre del dataset
+    relation_target : "RT"                  # Relación (RT | reply | quoted | all) 
 ---
 
 ```{r setup, 	echo = TRUE,message = FALSE,	warning = FALSE,include=FALSE, cache = FALSE}
@@ -18,12 +19,14 @@ opts_knit$set(root.dir = "./")
 
 Estos notebooks trabajan con esta estructura de directorios
 
-    dir_raiz ----+-----data      # Se guardan los datos, cada dataset en un directorio independiente
-                 |
-                 +-----keys      # se guardan los ficheros con las claves de acceso. 
-                 |
-                 +-----notebooks # Se guardan los notebooh en R
-                 
+```         
+dir_raiz ----+-----data      # Se guardan los datos, cada dataset en un directorio independiente
+             |
+             +-----keys      # se guardan los ficheros con las claves de acceso. 
+             |
+             +-----notebooks # Se guardan los notebooh en R
+             
+```
 
 ## Ciclo de Análisis ARS: Generar fichero gdf para Gephi
 
@@ -71,39 +74,59 @@ name_file_out <- paste0(data_path,dataset_name,".gdf")
 
 ## Leemos los datos
 
-```{r read_data}
+```{r read_data, warning=FALSE}
 file_tweets <- paste0(name_file_in)
 tweets <- read_csv(
   file_tweets,
   col_names = TRUE,
-  cols_only( created_at = col_datetime(), 
+  cols_only( 
     author = col_character(),
     app = col_character(),
     relation = col_character(),
     user_replied = col_character(),
     user_retweeted = col_character(),
+    user_quoted = col_character(),
     first_HT = col_character(),
     lang = col_character(),
     followers = col_number(),
     following = col_number(),
     statuses = col_number(),
     created_at = col_datetime(),
-    avatar = col_character()
+    avatar = col_character(),
+    verified_type = col_character(),
   )
 )
+
 ```
 
-## Calculamos los más retuiteados
+## creamos la columna de relación
 
-```{r top_RTS}
-ranking_RT <- tweets %>%
-  group_by(user_retweeted) %>%
+```{r columna_relación}
+
+tweets_df <- tweets %>%
+  mutate(target = case_when(
+    relation == "RT" ~ user_retweeted,
+    relation == "reply" ~ user_replied,
+    relation == "quoted" ~ user_quoted))
+if (params$relation_target != "all"){
+  tweets_df <- tweets_df %>%
+  filter(relation == params$relation_target)
+}
+
+
+```
+
+## Calculamos el top de relaciones entrantes
+
+```{r top_relaciones_entrantes}
+top_relations<- tweets_df %>%
+  group_by(target) %>%
   summarise(
     n_RT = n(),
     .group = "drop"
   ) %>%
   ungroup() %>%
-  filter(!is.na(user_retweeted) ) %>%
+  filter(!is.na(target) ) %>%
   arrange(desc(n_RT))
 ```
 
@@ -117,7 +140,7 @@ nodos  <- tweets %>%
   slice(1) %>%
   ungroup() %>%
   # Le añadimos el ranking de RTs
-  full_join(ranking_RT, by = c( "author" = "user_retweeted")) %>%
+  full_join(top_relations, by = c( "author" = "target")) %>%
   # Cambiamos valores nulos por 0 a n_RT
   mutate(n_RT =ifelse(is.na(n_RT), 0,n_RT)) %>%
   # Sustituimos los NA por 0 para que no proteste Gephi
@@ -141,7 +164,7 @@ nodos  <- tweets %>%
   # Seleccionamos los atributos del nodo
   select( author,n_RT,app,first_HT, lang, log_followers,log_following,
           log_statuses, created_at,
-          year_created_at, avatar_default
+          year_created_at, avatar_default, verified_type
   )
 ```
 
@@ -150,13 +173,13 @@ nodos  <- tweets %>%
 ```{r arcs}
 # Aplicamos el orden de los nodos
 tweets$author <- factor(tweets$author,levels=nodos$author) # Ordenamos según nodos
-arcos  <- tweets %>%
+arcos  <- tweets_df %>%
   # Dejamos solo los RTs
-  filter(!is.na(user_retweeted))  %>%
+  filter(!is.na(target))  %>%
   # Añadimos una columna necesaria para gephi
   mutate(directed = "TRUE") %>%
   # Agrupamos para contar el número de RTs de cada usuario
-  group_by(author,user_retweeted,directed) %>% 
+  group_by(author,target,directed) %>% 
     summarise(weight = n(),
              .groups = "drop")  %>%
   ungroup() %>%
@@ -168,11 +191,11 @@ arcos  <- tweets %>%
 
 ```{r write_file}
 # generamos la cabecera de los nodos y arcos
-head_nodos <- "nodedef>name VARCHAR,n_RTS INT,source VARCHAR, first_ht VARCHAR,lang VARCHAR, log_followers INT,log_following INT,log_statuses VARCHAR,account created_at VARCHAR,year_created_at VARCHAR, avatar_default VARCHAR"
+head_nodos <- "nodedef>name VARCHAR,n_RTS INT,source VARCHAR, first_ht VARCHAR,lang VARCHAR, log_followers INT,log_following INT,log_statuses VARCHAR,account created_at VARCHAR,year_created_at VARCHAR, avatar_default VARCHAR, verified_type VARCHAR"
 head_arcos <- "edgedef>node1 VARCHAR,node2 VARCHAR, directed BOOLEAN, weight INT"  
 # escribimos el fichero gdf
-write(head_nodos,name_file_out)
-write_csv(nodos,name_file_out,append=TRUE,col_names = FALSE)
-write(head_arcos,name_file_out,append=TRUE,)
-write_csv(arcos,name_file_out,append=TRUE,col_names = FALSE)
+write(head_nodos, name_file_out)
+write_csv(nodos, name_file_out, append = TRUE, col_names = FALSE)
+write(head_arcos, name_file_out, append = TRUE,)
+write_csv(arcos, name_file_out, append = TRUE, col_names = FALSE)
 ```
