@@ -4,7 +4,7 @@ output:
   html_document:
     df_print: paged
 params:
-    dataset_name : "xxxxxxxxxxx"            # Nombre del dataset
+    dataset_name : "4M_pucherazo"            # Nombre del dataset
     relation_target : "RT"                  # Relación (RT | reply | quoted | all) 
 ---
 
@@ -24,7 +24,7 @@ dir_raiz ----+-----data      # Se guardan los datos, cada dataset en un director
              |
              +-----keys      # se guardan los ficheros con las claves de acceso. 
              |
-             +-----notebooks # Se guardan los notebooh en R
+             +-----notebooks # Se guardan los notebook en R
              
 ```
 
@@ -102,12 +102,16 @@ tweets <- read_csv(
 ## creamos la columna de relación
 
 ```{r columna_relación}
-
+if(is.null(tweets$verified_type)){ 
+    tweets <-  tweets %>%
+      mutate(verified_type = NA)
+}
 tweets_df <- tweets %>%
   mutate(target = case_when(
     relation == "RT" ~ user_retweeted,
     relation == "reply" ~ user_replied,
-    relation == "quoted" ~ user_quoted))
+    relation == "quoted" ~ user_quoted)) 
+
 if (params$relation_target != "all"){
   tweets_df <- tweets_df %>%
   filter(relation == params$relation_target)
