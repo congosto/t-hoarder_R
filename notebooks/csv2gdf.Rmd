@@ -4,7 +4,7 @@ output:
   html_document:
     df_print: paged
 params:
-    dataset_name : "4M_pucherazo"            # Nombre del dataset
+    dataset_name : "xxxxxxxxxxx"            # Nombre del dataset
     relation_target : "RT"                  # Relación (RT | reply | quoted | all) 
 ---
 
