@@ -158,6 +158,116 @@ daily_routine <- function(df, date_ini, date_end, time_zone) {
     )
   return(p)
 }
+# Functions shared by spread_tweet.Rmd
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+#
+# rhythm_week 
+#
+# heatmap de la rutina de publicación por dos unidades de tiempos
+#
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+rhythm_week <- function(df, date_ini, date_end, time_zone) {
+  df <- df %>%
+    filter(date >= date_ini & date <= date_end)
+  tweets_horario_df <- df %>% 
+    mutate( slot_time_Y = lubridate::wday (date, label  = TRUE)) %>%
+    mutate( slot_time_X = as.character (lubridate::hour (date))) %>%
+    group_by(slot_time_Y,slot_time_X) %>% 
+    summarise(
+      num_tweets = n(),
+      .group = "drop"
+    ) %>%
+    ungroup()
+  tweets_horario_df$slot_time_Y <- factor (
+    tweets_horario_df$slot_time_Y,
+    levels = c("Mon","Tue","Wed","Thu","Fri","Sat", "Sun"))
+  tweets_horario_df$slot_time_Y <- fct_rev(tweets_horario_df$slot_time_Y)
+  tweets_horario_df$slot_time_X <- factor (
+    tweets_horario_df$slot_time_X,
+    levels = c("0","1","2","3","4","5","6","7","8","9","10","11","12",
+               "13","14","15","16","17","18","19","20","21","22","23"))
+  p <- ggplot() + 
+    geom_tile(
+      data = tweets_horario_df,
+      aes(x = slot_time_X, y = slot_time_Y, fill=num_tweets),
+      color = "white")+
+    scale_fill_gradient(low = "#DDEAFA", high = "#036DFA")+
+    scale_x_discrete(
+      expand =  c(0,0)
+    ) +
+    scale_y_discrete(
+      expand =  c(0,0)
+    ) +
+    guides(color = guide_legend(nrow=2,override.aes = list(size = 4) ) ) +
+    labs(
+      title = paste0(base_title,": weekly rhythm"),
+      subtitle = paste0("Time zone: ", time_zone),
+      x = "Hour",
+      y = "",
+      fill = "N. tweets") +
+    coord_fixed() +
+    my_theme() +
+    theme(
+      legend.position="right",
+      axis.title.y=element_blank(),
+      panel.border = element_blank(),
+      panel.background = element_blank()
+    )
+  return(p)
+}
+# Functions shared by spread_tweet.Rmd
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+#
+# rhythm_month 
+#
+# heatmap de la rutina de publicación por dos unidades de tiempos
+#
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+rhythm_month <- function(df, date_ini, date_end, time_zone) {
+  df <- df %>%
+    filter(date >= date_ini & date <= date_end)
+  tweets_horario_df <- df %>% 
+    mutate( slot_time_Y = lubridate::month (date, label  = TRUE)) %>%
+    mutate( slot_time_X = as.character (format (date,format ="%y"))) %>%
+    group_by(slot_time_Y,slot_time_X) %>% 
+    summarise(
+      num_tweets = n(),
+      .group = "drop"
+    ) %>%
+    ungroup()
+  tweets_horario_df$slot_time_Y <- factor (
+    tweets_horario_df$slot_time_Y,
+    levels = c("Jan","Feb","Mar","Apr","May","Jun", "Jul","Aug","Sep","Oct","Nov","Dec"))
+  tweets_horario_df$slot_time_Y <- fct_rev(tweets_horario_df$slot_time_Y)
+  p <- ggplot() + 
+    geom_tile(
+      data = tweets_horario_df,
+      aes(x = slot_time_X, y = slot_time_Y, fill=num_tweets),
+      color = "white")+
+    scale_fill_gradient(low = "#DDEAFA", high = "#036DFA")+
+    scale_x_discrete(
+      expand =  c(0,0)
+    ) +
+    scale_y_discrete(
+      expand =  c(0,0)
+    ) +
+    coord_fixed() +
+    guides(color = guide_legend(nrow=2,override.aes = list(size = 4) ) ) +
+    labs(
+      title = paste0(base_title,": monthly rhythm"),
+      subtitle = paste0("Time zone: ", time_zone),
+      x = "Year",
+      y = "",
+      fill = "N. tweets") +
+    my_theme() +
+    theme(
+      legend.position="right",
+      axis.title.y=element_blank(),
+      panel.border = element_blank(),
+      panel.background = element_blank()
+    )
+  return(p)
+}
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 #
 # daily_activity

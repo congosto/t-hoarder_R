@@ -32,7 +32,7 @@ Estos notebooks trabajan con esta estructura de directorios
                  |
                  +-----keys      # se guardan los ficheros con las claves de acceso. 
                  |
-                 +-----notebooks # Se guardan los notebooh en R
+                 +-----notebooks # Se guardan los notebook en R
                  
 
 ### Ciclo simplificado
@@ -166,6 +166,15 @@ num_days <- as.numeric(difftime(date_end ,date_end , units = c("days")))
 order_relation <- c("original", "quoted", "reply", "RT")
 tweets_df$relation_ext <- factor(tweets_df$relation_ext,levels = order_relation )
 color_relation <- c("RT"="purple", "reply"="steelblue4", "quoted"="seagreen4", "original" = "red4")
+# Definimos los domingos 
+sundays <-  tweets_df %>%
+  group_by (slot_time) %>%
+  summarise(
+    nun_tweets = n(),
+    .groups = "drop") %>%
+  ungroup () %>%
+  mutate (week_day= wday(slot_time, week_start = 1))  %>%
+  filter(week_day == 7)
 ```
 
 ## Resumen
@@ -202,15 +211,46 @@ ggsave(paste0(img_path,base_name_file_img, "_daily_routine_total.png"))
 
 -   Eje Y los días, eje X las horas
 
-```{r daily_routine_zoom, echo=FALSE, fig.height=12, fig.width=9, message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r daily_routine_zoom, echo=FALSE, fig.height=8, fig.width=9, message=FALSE, warning=FALSE, paged.print=FALSE}
 if(params$zoom) {
   p<- daily_routine(tweets_df, params$date_ini_zoom, params$date_end_zoom, time_zone) 
   print(p)
+  p <- p +
+    geom_hline(
+      data = sundays %>% filter (slot_time >= params$date_ini_zoom & slot_time <= params$date_end_zoom),
+      aes(yintercept = slot_time),
+      linetype="dashed",
+      color = "red4"
+    ) +
+    geom_label (
+      data = sundays %>% filter (slot_time >= params$date_ini_zoom & slot_time <= params$date_end_zoom),
+      aes (x = -3, y = slot_time, label = "Sunday"),
+      color = "red4"
+    ) 
+  #print(p)
   # Salvamos la gráfica en un archivo
   ggsave(paste0(img_path,base_name_file_img, "_daily_routine_zoom.png"))
 }
 
 
+```
+
+## Ritmo de publicación
+
+### semanal
+
+
+```{r rhythm_week}
+p <- rhythm_week (tweets_df,  date_ini, date_end, time_zone)
+print(p)
+```
+
+### Mensual
+
+
+```{r hythm_month }
+p <- rhythm_month (tweets_df,  date_ini, date_end, time_zone)
+print(p)
 ```
 
 ## Actividad diaria por tipo de tweet
@@ -239,6 +279,28 @@ if(params$zoom) {
 }
 ```
 
+## Actividad diaria por tipo lenguaje
+
+### Periodo total
+
+-   Linea temporal de publicación por lenguaje
+```{r daily_activity_lang_total, echo=FALSE, fig.width=9, fig.height=5, message=FALSE, warning=FALSE, paged.print=FALSE}
+p <- daily_activity_lang(tweets_df,  date_ini, date_end)
+print(p)
+# Salvamos la gráfica en un archivo
+ggsave(paste0(img_path,base_name_file_img, "_daily_activity_lang_total.png"))
+```
+### zoom
+
+-   Linea temporal de publicación por lenguaje
+```{r daily_activity_lang_zoom, echo=FALSE, fig.width=9, fig.height=5, message=FALSE, warning=FALSE, paged.print=FALSE}
+if(params$zoom) {
+  p <- daily_activity_lang(tweets_df,  params$date_ini_zoom, params$date_end_zoom)
+  print(p)
+  # Salvamos la gráfica en un archivo
+  ggsave(paste0(img_path,base_name_file_img, "_daily_activity_lang_zoom.png"))
+}
+```
 ## Impacto
 
 Las medidas de impacto recogen las reacciones a los tweets publicados, el orden es de más positivo a más negativos
@@ -501,7 +563,7 @@ ggsave(paste0(img_path,base_name_file_img, "_words_frequency_total.png"))
 
 ```{r frecuency_words_zoom, fig.height=5, fig.width=5}
 if(params$zoom) {
-  p <- words_frequency(tweets_df,params$date_ini_zoom, params$date_end_zoom)
+  p <- words_frequency(tweets_df,params$date_ini_zoom, date_end)
   print(p)
   # Salvamos la gráfica en un archivo
   ggsave(paste0(img_path,base_name_file_img, "_words_frequency_zoom.png"))
@@ -512,7 +574,7 @@ if(params$zoom) {
 
 #### Periodo total
 
-```{r frecuency_retweets_zoom, fig.height=5, fig.width=5}
+```{r frecuency_retweets_zoom, fig.height=6, fig.width=7}
 p <- retweets_frequency(tweets_df, date_ini, date_end)
 print(p)
 # Salvamos la gráfica en un archivo
@@ -521,11 +583,34 @@ ggsave(paste0(img_path,base_name_file_img, "_retweets_frequency_total.png"))
 
 #### Zoom
 
-```{r frecuency_retweets_total, fig.height=5, fig.width=5}
+```{r frecuency_retweets_total, fig.height=7, fig.width=7}
 if(params$zoom) {
   p <- retweets_frequency(tweets_df, params$date_ini_zoom, params$date_end_zoom)
   print(p)
   # Salvamos la gráfica en un archivo
   ggsave(paste0(img_path,base_name_file_img, "_retweets_frequency_zoom.png"))
+}
+```
+
+
+### Perfiles más comentados
+
+#### Periodo total
+
+```{r frecuency_reply_total, fig.height=7, fig.width=7}
+p <- reply_frequency(tweets_df, date_ini, date_end)
+print(p)
+# Salvamos la gráfica en un archivo
+ggsave(paste0(img_path,base_name_file_img, "_reply_frequency_total.png"))
+```
+
+#### zoom
+
+```{r frecuency_reply_zoom, fig.height=7, fig.width=7}
+if(params$zoom) {
+  p <- reply_frequency(tweets_df, params$date_ini_zoom, params$date_end_zoom)
+  print(p)
+  # Salvamos la gráfica en un archivo
+  ggsave(paste0(img_path,base_name_file_img, "_reply_frequency_total.png"))
 }
 ```
