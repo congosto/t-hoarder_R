@@ -243,14 +243,18 @@ if(params$zoom) {
 ```{r rhythm_week}
 p <- rhythm_week (tweets_df,  date_ini, date_end, time_zone)
 print(p)
+# Salvamos la gráfica en un archivo
+ggsave(paste0(img_path,base_name_file_img, "_rhythm_week_total.png"))
 ```
 
 ### Mensual
 
 
-```{r hythm_month }
+```{r hythm_month, message=FALSE}
 p <- rhythm_month (tweets_df,  date_ini, date_end, time_zone)
 print(p)
+# Salvamos la gráfica en un archivo
+ggsave(paste0(img_path,base_name_file_img, "_rhythm_month_total.png"))
 ```
 
 ## Actividad diaria por tipo de tweet
@@ -259,7 +263,7 @@ print(p)
 
 -   Linea temporal de publicación por tipo de tweet
 
-```{r daily_activity_total, echo=FALSE, fig.width=9, fig.height=5, message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r daily_activity_total, echo=FALSE, fig.width=8, fig.height=5, message=FALSE, warning=FALSE, paged.print=FALSE}
 p <- daily_activity(tweets_df,  date_ini, date_end)
 print(p)
 # Salvamos la gráfica en un archivo
