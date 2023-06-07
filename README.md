@@ -16,12 +16,14 @@ Estos **notebooks** trabajan con esta estructura de directorios prefijada.
 
 Los cuadernos para acceder a los datos (data) y las claves (keys) lo hacen de manera relativa al directorio dónde está el cuaderno. Aunque está configurado que el directorio de trabajo sea el del cuaderno, no siempre funciona. En el caso de que no encuentre los datos se debe configurar "Session / Set Working Directory / To Source File Location".
 
-    dir_raiz ----+-----data      # Se guardan los datos, cada dataset en un directorio independiente
-                 |
-                 +-----keys      # se guardan los ficheros con las claves de acceso. 
-                 |
-                 +-----notebooks # Se guardan los notebooh en R
-          
+```         
+dir_raiz ----+-----data      # Se guardan los datos, cada dataset en un directorio independiente
+             |
+             +-----keys      # se guardan los ficheros con las claves de acceso. 
+             |
+             +-----notebooks # Se guardan los notebooh en R
+      
+```
 
 Al descargar los datos de github con , se descargará esta estructura. Si se opta por otra forma de organizar los datos, los notebooks tendrán que ser modificados en la casilla de "Entorno de Trabajo"
 
@@ -52,7 +54,7 @@ El método de acceso a las APIs en este ejemplo será **Modo usuario**
 
 #### Crear credenciales
 
-Para obtener las credenciales que nos permitan trabajar en **Modo usuario** usaremos el script [python make_token_Twitter.ipynb](https://github.com/congosto/t-hoarder_R/blob/main/notebooks/make_token_Twitter.ipynb) disponible en github. Este script se puede ejecutar en el [entorno colab de google](https://colab.research.google.com/).
+Para obtener las credenciales que nos permitan trabajar en **Modo usuario** usaremos el script [python make_token_Twitter.ipynb](https://github.com/congosto/token_API_V1.1/blob/main/make_token_Twitter.ipynb) disponible en github. Este script se puede ejecutar en el [entorno colab de google](https://colab.research.google.com/).
 
 ![guía para crear credenciales](https://github.com/congosto/congosto.github.io/raw/master/crear_credenciales.jpg)
 
@@ -125,13 +127,13 @@ Es más elaborado pero permite un análisis en profundidad de la propagación al
 
     -   csv2gdf.Rmd obtiene de los datos descargados un fichero gdf que describe los nodos (perfiles de usuario) y las conexiones por RTs
 
--   Fase 2: Análisis de red en Gephi, con cálculo de la modularidad. Se exportarán de los datos de los nodos a un fichero csv
+-   Fase 3: Análisis de red en Gephi, con cálculo de la modularidad. Se exportarán de los datos de los nodos a un fichero csv
 
--   Fase 3: notebook para la incorporación de la clasificación de usuarios de gephi a los tweets
+-   Fase 4: notebook para la incorporación de la clasificación de usuarios de gephi a los tweets
 
     -   classify_tweets.Rmd clasifica los tweets en función de la clasificación de usuarios de Gephi
 
--   Fase 4: Notebooks de visualización
+-   Fase 5: Notebooks de visualización
 
     -   spread_tweets.Rmd para visualizar propagación de tweets (con el parámetro ARS = TRUE)
 
