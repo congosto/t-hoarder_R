@@ -37,12 +37,14 @@ if(!"tidyverse" %in% installed.packages()) {install.packages("tidyverse")}
 if(!"scales" %in% installed.packages()) {install.packages("scales")}
 if(!"lubridate" %in% installed.packages()) {install.packages("lubridate")}
 if(!"ggrepel" %in% installed.packages()) {install.packages("ggrepel")}
+if (!"gghighlight" %in% installed.packages()) {install.packages("gghighlight")}
 if (!"svDialogs" %in% installed.packages()) {install.packages("svDialogs")}
 library(academictwitteR)  # Interfaz con API Twitter Académiva V2
 library(tidyverse)
 library(scales)
 library(lubridate)
 library(ggrepel)
+library(gghighlight) #para resaltar líneas
 library(svDialogs) # Cuadros de diálogo y formularios
 locale(date_names = "en", date_format = "%AD", time_format = "%AT",
   decimal_mark = ".", grouping_mark = ",", tz = "Europe/Berlin",
@@ -123,8 +125,7 @@ end_run_time = Sys.time ()
 print (paste ( "inicio: ",start_run_time))
 print (paste ( "fin: ",end_run_time))
 ```
-
-# Tweets day
+## Tweets day
 
 ```{r tweets_day, echo=TRUE, fig.height=6, fig.width=9, message=FALSE, warning=FALSE, paged.print=FALSE}
 tweets_df <- tweets_count %>%
@@ -134,6 +135,12 @@ tweets_df <- tweets_count %>%
   mutate(end = lubridate::with_tz(end, params$time_zone)) %>%
   filter (!(start == end)) %>%
   arrange (start)
+order_legend <- tweets_df %>%
+  group_by(query) %>%
+  summarize (tot_tweets = sum(tweet_count)) %>%
+  arrange (tot_tweets) %>%
+  select (query)
+tweets_df$query <- fct_rev(factor (tweets_df$query, levels = order_legend$query))
   ini_date <- as.POSIXct(min(tweets_df$start,na.rm = TRUE))
   end_date <- as.POSIXct(max(tweets_df$end,na.rm = TRUE))                
   visible_dates <- as.POSIXct(seq(ini_date,end_date, by = time_scale(ini_date,end_date)))
@@ -182,7 +189,74 @@ ggplot() +
 ggsave(paste0(img_path,base_name_file_img,"_count_tweets_day.png"))
 ```
 
-# Tweets acumulados
+## Tweets day rejilla
+
+```{r tweets_day_rejilla, echo=TRUE, fig.height=9, fig.width=9, message=FALSE, warning=FALSE, paged.print=FALSE}
+tweets_df <- tweets_count %>%
+  mutate(start = as.POSIXct(gsub("T", " ", start), "%Y-%m-%d %H:%M:%0S%z")) %>%
+  mutate(end = as.POSIXct(gsub("T", " ", end), "%Y-%m-%d %H:%M:%0S%z")) %>%
+  mutate(start = lubridate::with_tz(start, params$time_zone)) %>%
+  mutate(end = lubridate::with_tz(end, params$time_zone)) %>%
+  filter (!(start == end)) %>%
+  arrange (start)
+
+order_legend <- tweets_df %>%
+  group_by(query) %>%
+  summarize (tot_tweets = sum(tweet_count)) %>%
+  arrange (tot_tweets) %>%
+  select (query)
+tweets_df$query <- fct_rev(factor (tweets_df$query, levels = order_legend$query))
+ini_date <- as.POSIXct(min(tweets_df$start,na.rm = TRUE))
+end_date <- as.POSIXct(max(tweets_df$end,na.rm = TRUE))                
+visible_dates <- as.POSIXct(seq(ini_date,end_date, by = time_scale(ini_date,end_date)))
+limit_x = as.POSIXct(c(ini_date, end_date + (expand_time(ini_date, end_date, 1))))
+limit_y =  max(tweets_df$tweet_count) 
+ggplot() + 
+    geom_line(
+    data = tweets_df,
+    aes( x=end, y= tweet_count),
+    color = "grey50",
+    linewidth =0.5,
+    alpha = 0.5
+  ) +
+    geom_line(
+    data = tweets_df,
+    aes( x=end, y= tweet_count, color = query),
+    linewidth =1,
+    alpha = 1
+  ) +
+  gghighlight(max(tweet_count) > 1, use_direct_label = FALSE) + # función de resaltado
+
+  scale_x_datetime (
+    limits=limit_x,
+    breaks = visible_dates,
+    date_labels = format_time(ini_date, end_date)
+  ) +
+  scale_y_continuous( 
+    labels = label_number_si(),
+    limits= c(0,limit_y * 1.2),
+    expand= c(0,0)) +
+  labs(
+    title = paste0(base_title , ": Tweets by ", params$granularity),
+    x = "",
+    y = paste0("Num. Tweets by ",params$granularity),
+    color=""
+  ) +
+  guides(color = "none") +
+  facet_wrap(~query, ncol = 2, scale = "free") + 
+  my_theme() +
+  theme(
+    legend.position="top",
+    axis.text.x=element_text(size=8),
+    axis.text.y=element_text(size=8)
+  )
+        
+         
+ggsave(paste0(img_path,base_name_file_img,"_count_tweets_day.png"))
+```
+
+
+## Tweets acumulados
 
 ```{r accumulated tweets, echo=TRUE, fig.height=6, fig.width=9, message=FALSE, warning=FALSE, paged.print=FALSE}
 tweets_df <- tweets_count %>%
