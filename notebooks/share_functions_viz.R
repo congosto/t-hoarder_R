@@ -22,8 +22,8 @@ my_theme <- function(base_size = 11){
         l = 6
       ),
       text = element_text(size=base_size + 2),
-      axis.text.x=element_text(size=base_size + 1),
-      axis.text.y=element_text(size=base_size + 1),
+      axis.text.x=element_text(size=base_size),
+      axis.text.y=element_text(size=base_size),
       axis.title.x=element_text(
         size=base_size + 2,
         margin = unit(c(3, 0, 0, 0), "mm")
@@ -137,8 +137,39 @@ summary <- function(df) {
     group_by(relation_ext)  %>%
     summarise (
       num_tweets = n(),
+      percent = round (num_tweets / nrow(df) * 100, 1)
+    ) %>%
+    ungroup ()
+  i = 1
+  for (relation in order_relation) {
+    if (!(relation %in%  summary$relation_ext)){
+      row <- as_tibble_row( list(
+        relation_ext = relation,
+        num_tweets = as.integer(0),
+        percent = as.integer (0))
+      )
+      summary <- add_row(summary, row,.before = i)
+    }
+    i = i + 1
+  }
+  return(summary)
+}
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+#
+# summary
+#
+# Calcular el porcentaje de tipos de tweets
+#
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+summary_lang <- function(df, max_langs) {
+  summary <- df %>%
+    group_by(lang)  %>%
+    summarise (
+      num_tweets = n(),
       percent = round (num_tweets / nrow(df) * 100, 1),
       .group = "drop") %>%
-    ungroup ()
+    ungroup () %>%
+    arrange (desc(num_tweets)) %>%
+    head(max_langs)
   return(summary)
 }
