@@ -8,6 +8,11 @@ params:
     query : "xxxxxxx,xxxxx,xxxxxx"       # una o varias queries separadas por comas, una query puede contener OR 
     base_title : "xxxxxxxxx"             # Prefijo del título principal de las gráficas
     granularity : "hour"                  # Unidad de tiempo: hour| day | week | month
+    start_time   : "2006-05-01 00:00:00" # Formato YYYY-MM-DD 00:00:00. Por defecto fecha de creación de Twitter
+    end_time     : "YYYY-MM-DD 00:00:00" # Formato YYYY-MM-DD 00:00:00. por defecto, hora GMT actual 
+    
+    
+   
 ---
 ```{r setup, 	echo = TRUE,message = FALSE,	warning = FALSE,include=FALSE, cache = FALSE}
 require("knitr")
