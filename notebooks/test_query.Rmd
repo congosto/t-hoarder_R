@@ -4,16 +4,10 @@ output:
   html_document:
     df_print: paged
 params:
-    dataset_name : "trends"          # Nombre del dataset
-    query : "retweets_of:publico_es, retweets_of:el_pais, retweets_of:eldiarioes, retweets_of:okdiario, retweets_of:abc_es, retweets_of:elmundoes, retweets_of:elconfidencial, retweets_of:larazon_es, retweets_of:elperiodico, retweets_of:LaVanguardia"
-    base_title : "RTs recibidos por los digitales"
+    dataset_name : "xxxxxxxxxx"          # Nombre del dataset
+    query : "xxxxxxx,xxxxx,xxxxxx"       # una o varias queries separadas por comas, una query puede contener OR 
+    base_title : "xxxxxxxxx"             # Prefijo del título principal de las gráficas
     granularity : "hour"                  # Unidad de tiempo: hour| day | week | month
-    time_zone: "Europe/Berlin"           # Huso horario
-    start_time   : "2023-05-12 00:00:00" # Formato YYYY-MM-DD 00:00:00. Por defecto fecha de creación de Twitter
-    end_time     : "2023-05-28 00:00:00" # Formato YYYY-MM-DD 00:00:00. por defecto, hora GMT actual 
-    
-    
-   
 ---
 ```{r setup, 	echo = TRUE,message = FALSE,	warning = FALSE,include=FALSE, cache = FALSE}
 require("knitr")
@@ -137,7 +131,7 @@ tweets_df <- tweets_count %>%
   filter (!(start == end)) %>%
   arrange (start)
 order_legend <- tweets_df %>%
-  group_by(query) %>%
+  group_by(query,url) %>%
   summarize (tot_tweets = sum(tweet_count)) %>%
   arrange (tot_tweets) %>%
   select (query)
@@ -251,7 +245,7 @@ ggplot() +
   )
         
          
-ggsave(paste0(img_path,base_name_file_img,"_count_tweets_day.png"))
+ggsave(paste0(img_path,base_name_file_img,"_count_tweets_day_facet.png"))
 ```
 
 
