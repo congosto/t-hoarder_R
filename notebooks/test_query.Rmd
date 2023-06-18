@@ -4,13 +4,16 @@ output:
   html_document:
     df_print: paged
 params:
-    dataset_name : "xxxxxxxxxx"          # Nombre del dataset
-    query : "xxxxxxx,xxxxx,xxxxxx"       # una o varias queries separadas por comas, una query puede contener OR 
-    base_title : "xxxxxxxxx"             # Prefijo del título principal de las gráficas
-    granularity : "day"                  # Unidad de tiempo: hour| day | week | month
+    dataset_name : "trends"          # Nombre del dataset
+    query : "retweets_of:publico_es, retweets_of:el_pais, retweets_of:eldiarioes, retweets_of:okdiario, retweets_of:abc_es, retweets_of:elmundoes, retweets_of:elconfidencial, retweets_of:larazon_es, retweets_of:elperiodico, retweets_of:LaVanguardia"
+    base_title : "RTs recibidos por los digitales"
+    granularity : "hour"                  # Unidad de tiempo: hour| day | week | month
     time_zone: "Europe/Berlin"           # Huso horario
-    start_time   : "2006-04-01 00:00:00" # Formato YYYY-MM-DD 00:00:00. Por defecto fecha de creación de Twitter
-    end_time     : "YYYY-MM-DD 00:00:00" # Formato YYYY-MM-DD 00:00:00. por defecto, hora GMT actual 
+    start_time   : "2023-05-12 00:00:00" # Formato YYYY-MM-DD 00:00:00. Por defecto fecha de creación de Twitter
+    end_time     : "2023-05-28 00:00:00" # Formato YYYY-MM-DD 00:00:00. por defecto, hora GMT actual 
+    
+    
+   
 ---
 ```{r setup, 	echo = TRUE,message = FALSE,	warning = FALSE,include=FALSE, cache = FALSE}
 require("knitr")
@@ -37,14 +40,12 @@ if(!"tidyverse" %in% installed.packages()) {install.packages("tidyverse")}
 if(!"scales" %in% installed.packages()) {install.packages("scales")}
 if(!"lubridate" %in% installed.packages()) {install.packages("lubridate")}
 if(!"ggrepel" %in% installed.packages()) {install.packages("ggrepel")}
-if (!"gghighlight" %in% installed.packages()) {install.packages("gghighlight")}
 if (!"svDialogs" %in% installed.packages()) {install.packages("svDialogs")}
 library(academictwitteR)  # Interfaz con API Twitter Académiva V2
 library(tidyverse)
 library(scales)
 library(lubridate)
 library(ggrepel)
-library(gghighlight) #para resaltar líneas
 library(svDialogs) # Cuadros de diálogo y formularios
 locale(date_names = "en", date_format = "%AD", time_format = "%AT",
   decimal_mark = ".", grouping_mark = ",", tz = "Europe/Berlin",
@@ -150,7 +151,7 @@ ggplot() +
   geom_line(
     data = tweets_df,
     aes( x=end, y= tweet_count, color = query),
-    linewidth =1.2
+    linewidth =0.2
   ) +
   # Anotamos el máximo de tweets originales/hora
   geom_text(
@@ -191,7 +192,7 @@ ggsave(paste0(img_path,base_name_file_img,"_count_tweets_day.png"))
 
 ## Tweets day rejilla
 
-```{r tweets_day_rejilla, echo=TRUE, fig.height=9, fig.width=9, message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r tweets_day_rejilla, echo=TRUE, fig.height=12, fig.width=9, message=FALSE, warning=FALSE, paged.print=FALSE}
 tweets_df <- tweets_count %>%
   mutate(start = as.POSIXct(gsub("T", " ", start), "%Y-%m-%d %H:%M:%0S%z")) %>%
   mutate(end = as.POSIXct(gsub("T", " ", end), "%Y-%m-%d %H:%M:%0S%z")) %>%
@@ -212,21 +213,19 @@ visible_dates <- as.POSIXct(seq(ini_date,end_date, by = time_scale(ini_date,end_
 limit_x = as.POSIXct(c(ini_date, end_date + (expand_time(ini_date, end_date, 1))))
 limit_y =  max(tweets_df$tweet_count) 
 ggplot() + 
-    geom_line(
-    data = tweets_df,
-    aes( x=end, y= tweet_count),
-    color = "grey50",
-    linewidth =0.5,
-    alpha = 0.5
+  geom_line(
+    data = tweets_df %>%  rename( query2 = query),
+    aes( x=end, y= tweet_count, group = query2),
+    color = "black",
+    size = 0.3,
+    alpha = 0.15
   ) +
-    geom_line(
+  geom_line(
     data = tweets_df,
     aes( x=end, y= tweet_count, color = query),
-    linewidth =1,
+    linewidth = 0.7,
     alpha = 1
   ) +
-  gghighlight(max(tweet_count) > 1, use_direct_label = FALSE) + # función de resaltado
-
   scale_x_datetime (
     limits=limit_x,
     breaks = visible_dates,
