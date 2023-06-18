@@ -1,5 +1,5 @@
 ---
-title: "test_querys"
+title: "test_query"
 output:
   html_document:
     df_print: paged
@@ -7,12 +7,11 @@ params:
     dataset_name : "xxxxxxxxxx"          # Nombre del dataset
     query : "xxxxxxx,xxxxx,xxxxxx"       # una o varias queries separadas por comas, una query puede contener OR 
     base_title : "xxxxxxxxx"             # Prefijo del título principal de las gráficas
+    time_zone: "Europe/Berlin"        # Huso horario
     granularity : "hour"                  # Unidad de tiempo: hour| day | week | month
     start_time   : "2006-05-01 00:00:00" # Formato YYYY-MM-DD 00:00:00. Por defecto fecha de creación de Twitter
     end_time     : "YYYY-MM-DD 00:00:00" # Formato YYYY-MM-DD 00:00:00. por defecto, hora GMT actual 
-    
-    
-   
+
 ---
 ```{r setup, 	echo = TRUE,message = FALSE,	warning = FALSE,include=FALSE, cache = FALSE}
 require("knitr")
@@ -136,7 +135,7 @@ tweets_df <- tweets_count %>%
   filter (!(start == end)) %>%
   arrange (start)
 order_legend <- tweets_df %>%
-  group_by(query,url) %>%
+  group_by(query) %>%
   summarize (tot_tweets = sum(tweet_count)) %>%
   arrange (tot_tweets) %>%
   select (query)
@@ -216,13 +215,13 @@ ggplot() +
     data = tweets_df %>%  rename( query2 = query),
     aes( x=end, y= tweet_count, group = query2),
     color = "black",
-    size = 0.3,
+    linewidth = 0.3,
     alpha = 0.15
   ) +
   geom_line(
     data = tweets_df,
     aes( x=end, y= tweet_count, color = query),
-    linewidth = 0.7,
+    linewidth = 1,
     alpha = 1
   ) +
   scale_x_datetime (
