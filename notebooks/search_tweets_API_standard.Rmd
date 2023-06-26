@@ -4,9 +4,9 @@ output:
   html_document:
     df_print: paged
 params:
-    dataset_name : "xxxxxxxxx"           # Nombre del dataset
-    query        : "xxxxxxxxxxxxx"       # Query para la búsqueda de tweets
-    max_tweets   : 100000                # Máximo número de tweets.
+    dataset_name : "prueba"           # Nombre del dataset
+    query        : "Warner since:2023-06-21 until:2023-06-25"       # Query para la búsqueda de tweets"       # Query para la búsqueda de tweets
+    max_tweets   : 200                # Máximo número de tweets.
 ---
 
 ```{r setup, 	echo = TRUE,message = FALSE,	warning = FALSE,include=FALSE, cache = FALSE}
@@ -20,12 +20,14 @@ opts_knit$set(root.dir = "./")
 
 Estos notebooks trabajan con esta estructura de directorios
 
-    dir_raiz ----+-----data      # Se guardan los datos, cada dataset en un directorio independiente
-                 |
-                 +-----keys      # se guardan los ficheros con las claves de acceso. 
-                 |
-                 +-----notebooks # Se guardan los notebooh en R
-                 
+```         
+dir_raiz ----+-----data      # Se guardan los datos, cada dataset en un directorio independiente
+             |
+             +-----keys      # se guardan los ficheros con las claves de acceso. 
+             |
+             +-----notebooks # Se guardan los notebooh en R
+             
+```
 
 ## Requisitos
 
@@ -121,10 +123,6 @@ while (TRUE)
     parse = TRUE,
     token = token
     )
-  # Comprobamos si se han descargado todos los tweets
-  if (tweets_download >= max_tweets) {
-    break  # Salinos del while (TRUE)
-  }
   if (nrow (tweets) == 0){
     if (Attempts > 3 ) {
       break  # Salinos del while (TRUE)
@@ -144,6 +142,10 @@ while (TRUE)
     head_file <- FALSE
     tweets_download <- tweets_download + nrow(tweets)
     print(paste ("--> descargados ",tweets_download, "tweets"))
+    # Comprobamos si se han descargado todos los tweets
+    if (tweets_download >= max_tweets) {
+      break  # Salinos del while (TRUE)
+    }
   }
 } # while (TRUE)
 end_run_time = Sys.time ()

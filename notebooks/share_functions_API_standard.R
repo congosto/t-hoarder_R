@@ -23,22 +23,21 @@ parser_tweets_API_standard <- function (tweets){
       id_tweet,date,text,app,retweet_count,favorite_count,quote_count,reply_count,lang,
       replied_id,user_replied,is_quote_status,retweeted
     )
-  # Extraemos El primer hashtag, las urls expandidas y la multimedia
+  # Extraemos El primer hashtag, las urls expandidas y la multimedia si exusten
   col_NA <- rep(NA, nrow(tweets))
-  #print (!is.null (lapply(tweets_aux$entities, `[[`, "hashtags")))
-  if (!is.null (lapply(tweets$entities, `[[`, "hashtags"))){
+  if ("hashtags" %in% names(tweets$entities)){
     first_HT <- lapply(tweets$entities, `[[`, "hashtags") %>%
       lapply(`[[`, "tag") %>%
       lapply(function(x) {ifelse (is.null (x), NA,x)}) %>%
       unlist (recursive = FALSE)
   } else{first_HT = col_NA}
-  if (!is.null (lapply(tweets$entities, `[[`, "urls"))){
+  if ("urls" %in% names(tweets$entities)){
     urls <- lapply(tweets$entities, `[[`, "urls") %>%
       lapply(`[[`, "expanded_url") %>%
       lapply(function(x) {ifelse (is.null (x), NA,x)}) %>%
       unlist (recursive = FALSE)
   } else{urls = col_NA}
-  if (!!is.null (lapply(tweets$entities, `[[`, "media"))){
+  if ("media" %in% names(tweets$entities)){
     url_media <- lapply(tweets$entities$media, `[[`, "media") %>%
       lapply(`[[`, "media_url") %>%
       lapply(function(x) {ifelse (is.null (x), NA,x)}) %>%
@@ -87,7 +86,7 @@ parser_tweets_API_standard <- function (tweets){
   }
   quoted_df <- data.frame(quote = quote, quoted_id = quoted_id, user_quoted = user_quoted)
   # Si RT, extraemos los datos 
-  if ("retweeted_status" %in% names(tweets)){     
+  if ("id_str" %in% names(tweets$retweeted_status)){     
     retweeted_id <- lapply(tweets$retweeted_status, `[[`, "id_str") %>%
       unlist (recursive = FALSE)
     user_retweeted <- lapply(tweets$retweeted_status, `[[`, "user") %>%
@@ -105,7 +104,7 @@ parser_tweets_API_standard <- function (tweets){
     # Añadimos el link al tweet
     mutate (link = paste0("https://twitter.com/",author,"/status/",id_tweet)) %>%
     # Formato de fechas
-    mutate (date = format(date, "%Y-%m-%d %H:%M%S")) %>%
+    mutate (date = format(date, "%Y-%m-%d %H:%M:%S")) %>%
     mutate (created_at = as.POSIXlt(created_at, tz="GMT",format ("%a %b %d %H:%M:%S %z %Y"))) %>%
     # Parse app
     mutate (app = str_extract (app,">[\\w ]+")) %>%
