@@ -4,9 +4,9 @@ output:
   html_document:
     df_print: paged
 params:
-    dataset_name : "prueba"           # Nombre del dataset
-    query        : "Warner since:2023-06-21 until:2023-06-25"       # Query para la búsqueda de tweets"       # Query para la búsqueda de tweets
-    max_tweets   : 200                # Máximo número de tweets.
+    dataset_name : "xxxxxxxxx"           # Nombre del dataset
+    query        : "xxxxxxxxxxxxx"       # Query para la búsqueda de tweets
+    max_tweets   : 100000                # Máximo número de tweets.
 ---
 
 ```{r setup, 	echo = TRUE,message = FALSE,	warning = FALSE,include=FALSE, cache = FALSE}
