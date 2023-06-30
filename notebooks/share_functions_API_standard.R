@@ -23,22 +23,25 @@ parser_tweets_API_standard <- function (tweets){
       id_tweet,date,text,app,retweet_count,favorite_count,quote_count,reply_count,lang,
       replied_id,user_replied,is_quote_status,retweeted
     )
-  # Extraemos El primer hashtag, las urls expandidas y la multimedia si exusten
+  # Extraemos El primer hashtag, las urls expandidas y la multimedia si existen
   col_NA <- rep(NA, nrow(tweets))
-  if ("hashtags" %in% names(tweets$entities)){
+  #print ("hashtags")
+  if (!is.null (lapply(tweets$entities, `[[`, "hashtags"))){
     first_HT <- lapply(tweets$entities, `[[`, "hashtags") %>%
-      lapply(`[[`, "tag") %>%
+      lapply(`[[`, "text") %>%
       lapply(function(x) {ifelse (is.null (x), NA,x)}) %>%
       unlist (recursive = FALSE)
   } else{first_HT = col_NA}
-  if ("urls" %in% names(tweets$entities)){
+  #print ("urls")
+  if (!is.null (lapply(tweets$entities, `[[`, "urls"))){
     urls <- lapply(tweets$entities, `[[`, "urls") %>%
       lapply(`[[`, "expanded_url") %>%
       lapply(function(x) {ifelse (is.null (x), NA,x)}) %>%
       unlist (recursive = FALSE)
   } else{urls = col_NA}
-  if ("media" %in% names(tweets$entities)){
-    url_media <- lapply(tweets$entities$media, `[[`, "media") %>%
+  #print ("media")
+  if (!is.null (lapply(tweets$entities, `[[`, "media"))){
+    url_media <- lapply(tweets$entities, `[[`, "media") %>%
       lapply(`[[`, "media_url") %>%
       lapply(function(x) {ifelse (is.null (x), NA,x)}) %>%
       unlist (recursive = FALSE)
@@ -50,6 +53,7 @@ parser_tweets_API_standard <- function (tweets){
   type_media = col_NA}
   entities_df <- data.frame(urls = urls, first_HT = first_HT, url_media = url_media, type_media = type_media)
   #coordinates <- tweets$coordinates
+  #print ("coordinates")
   long <- lapply(tweets$coordinates, `[[`, "long") %>%
     unlist (recursive = FALSE)
   lat <- lapply(tweets$coordinates, `[[`, "lat") %>%
@@ -71,30 +75,32 @@ parser_tweets_API_standard <- function (tweets){
       created_at,verified,avatar
     )
   # Si es una cita, extraemos los datos
-  if ("full_text" %in% names(tweets$quoted_status)) {                                            
-    quote <- lapply(tweets$quoted_status, `[[`, "full_text") %>%
-      unlist (recursive = FALSE)
-    quoted_id <- lapply(tweets$quoted_status, `[[`, "id_str") %>%
-      unlist (recursive = FALSE)
-    user_quoted <- lapply(tweets$quoted_status, `[[`, "user") %>%
-      lapply(`[[`, "screen_name") %>%
-      unlist (recursive = FALSE)
-  } else {
-    quote = col_NA
-    quoted_id = col_NA
-    user_quoted = col_NA
+  #print ("quoted_status")
+  quote = col_NA
+  quoted_id = col_NA
+  user_quoted = col_NA
+  if (sum(is.na(tweets$quoted_status)) == 0){
+    if (!is.null (lapply(tweets$quoted_status, `[[`, "id_str"))){
+      quote <- lapply(tweets$quoted_status, `[[`, "full_text") %>%
+        unlist (recursive = FALSE)
+      quoted_id <- lapply(tweets$quoted_status, `[[`, "id_str") %>%
+        unlist (recursive = FALSE)
+      user_quoted <- lapply(tweets$quoted_status, `[[`, "user") %>%
+        lapply(`[[`, "screen_name") %>%
+        unlist (recursive = FALSE)
+    }
   }
   quoted_df <- data.frame(quote = quote, quoted_id = quoted_id, user_quoted = user_quoted)
   # Si RT, extraemos los datos 
-  if ("id_str" %in% names(tweets$retweeted_status)){     
+  #print ("retweeted_status")
+  retweeted_id = col_NA
+  user_retweeted = col_NA
+  if (!is.null (lapply(tweets$retweeted_status, `[[`, "id_str"))){
     retweeted_id <- lapply(tweets$retweeted_status, `[[`, "id_str") %>%
       unlist (recursive = FALSE)
     user_retweeted <- lapply(tweets$retweeted_status, `[[`, "user") %>%
       lapply(`[[`, "screen_name") %>%
       unlist (recursive = FALSE)
-  } else {
-    retweeted_id = col_NA
-    user_retweeted = col_NA
   }
   RT_df <- data.frame( retweeted_id  = retweeted_id ,user_retweeted = user_retweeted)
   # Unimos los datasets

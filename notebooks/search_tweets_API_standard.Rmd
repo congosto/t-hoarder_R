@@ -6,7 +6,7 @@ output:
 params:
     dataset_name : "xxxxxxxxx"           # Nombre del dataset
     query        : "xxxxxxxxxxxxx"       # Query para la búsqueda de tweets
-    max_tweets   : 100000                # Máximo número de tweets.
+    max_tweets   : 100000                # Máximo número de tweets.             # Máximo número de tweet
 ---
 
 ```{r setup, 	echo = TRUE,message = FALSE,	warning = FALSE,include=FALSE, cache = FALSE}
@@ -97,6 +97,7 @@ token <- rtweet_bot(
   access_token = access_token,
   access_secret = access_secret
   )
+#token <- rtweet_app ("AAAAAAAAAAAAAAAAAAAAAOvQRgEAAAAA10%2F0MoZ0R8h4%2B3b%2BuQoxsuIFakk%3DwrUBuurL71RzMP0EmKPPly9CC3CGjZSgf9MNotVCzUxahIeWrW")
 ```
 
 ## Descargar y normalizar tweets
@@ -108,13 +109,15 @@ last_tweet <- NULL
 head_file <- TRUE
 tweets_download <- 0
 Attempts <- 0
+size_block <- 100
 while (TRUE)
 {
-  # Bajamos los datos de 100 en 100 tweets para ir salvándolos en un fichero y evitar
+  # Bajamos los datos de 1000 en 1000 tweets para ir salvándolos en un fichero y evitar
   # un desbordamiento cuando hay muchos tweets
+  if (max_tweets < size_block){size_block <- max_tweets}
   tweets <- search_tweets(
     q = query,
-    n = 1000,
+    n = size_block,
     type = "recent",
     retryonratelimit = TRUE,
     include_rts = TRUE,
