@@ -97,7 +97,8 @@ token <- rtweet_bot(
   access_token = access_token,
   access_secret = access_secret
   )
-#token <- rtweet_app ("AAAAAAAAAAAAAAAAAAAAAOvQRgEAAAAA10%2F0MoZ0R8h4%2B3b%2BuQoxsuIFakk%3DwrUBuurL71RzMP0EmKPPly9CC3CGjZSgf9MNotVCzUxahIeWrW")
+# Para usar la APi académica con V1, desencometariar la siguiente línea
+#token <- rtweet_app ("Bearer Token Académica")
 ```
 
 ## Descargar y normalizar tweets
