@@ -9,6 +9,13 @@ params:
     zoom: FALSE                        # (TRUE/FALSE) TRUE si se desea hacer zoom 
     date_ini_zoom: "YYYY-MM-DD"       # (Solo si zoom es TRUE) Fecha de inicio del zoom, formato YYYY-MM-DD 
     date_end_zoom: "YYYY-MM-DD"       # (Solo si zoom es TRUE) Fecha de inicio del zoom, formato YYYY-MM-DD
+    min_followers_influencers_zoom: 10000 # Mínimo de followers de un perfil para ser etiquetado en el zoom
+    show_dates: FALSE              #(TRUE/FALSE) TRUE si se desea hacer anotaciones
+    file_dates: "xxxxxxxxxx"         # Si TRUE, nombre del fichero con las anotaciones
+    show_topics: FALSE             #(TRUE/FALSE) TRUE si se desea visualizar los topics
+    file_topics: "xxxxxxxxx"  # Si TRUE, nombre del fichero con los topics
+    show_blocks: FALSE
+    file_blocks: "xxxxxxxxxx" # Si TRUE, nombre del fichero con los bloques
 ---
 
 ```{r setup, 	echo = TRUE,message = FALSE,	warning = FALSE,include=FALSE, cache = FALSE}
@@ -22,12 +29,14 @@ opts_knit$set(root.dir = "./")
 
 Estos notebooks trabajan con esta estructura de directorios
 
-    dir_raiz ----+-----data      # Se guardan los datos, cada dataset en un directorio independiente
-                 |
-                 +-----keys      # se guardan los ficheros con las claves de acceso. 
-                 |
-                 +-----notebooks # Se guardan los notebooh en R
-                 
+```         
+dir_raiz ----+-----datos      # Se guardan los datos, cada dataset en un directorio independiente
+             |
+             +-----keys      # se guardan los ficheros con las claves de acceso. 
+             |
+             +-----notebooks # Se guardan los notebook en R
+             
+```
 
 ## Ciclo de análisis: Visualizar propagación temporal
 
@@ -143,8 +152,17 @@ if(file.exists(img_path)) {
 } else {
  dir.create(img_path)
  cat(paste(img_path,"created"))
- options(svDialogs.rstudio = TRUE)
 }
+if (params$show_blocks) {
+  file_blocks <- paste0(data_path, params$file_blocks )
+}
+if (params$show_topics) {
+  file_topics <- paste0(data_path, params$file_topics )
+}
+if (params$show_dates) {
+  file_dates <- paste0(data_path, params$file_dates )
+}
+
 ```
 
 ## Leemos el dataset
@@ -156,6 +174,7 @@ if(ARS == TRUE) {
     name_file_in,
     col_names = TRUE,
     cols_only(
+      id_tweet = col_character(),
       date = col_datetime(), 
       author = col_character(),
       text = col_character(),
@@ -192,6 +211,7 @@ if(ARS == TRUE) {
      name_file_in,
      col_names = TRUE,
      cols_only(
+      id_tweet = col_character(),
       date = col_datetime(), 
       author = col_character(),
       text = col_character(),
@@ -213,9 +233,36 @@ if(ARS == TRUE) {
       favorite_count = col_number()
      )
    )
- }
-max_date <- max(tweets$date)
-min_date <- min(tweets$date)
+}
+if (params$show_blocks){
+  blocks <- read_csv(
+  file_blocks,
+  col_names = TRUE,
+  cols_only(
+    community = col_character(), 
+    name_community = col_character(),
+    color  = col_character())
+  )
+}
+if (params$show_topics){
+  topics <- read_csv(
+    file_topics
+    ) 
+  topics <- unique (topics$topics)
+}
+if (params$show_dates){
+  annotations_names <- read_csv(
+    file_dates,
+    col_names = TRUE,
+    cols_only(
+      date = col_datetime(), 
+      name = col_character()
+    )
+  )
+}else{annotations_names <- NA}
+
+max_date <- max(tweets$date, na.rm=TRUE)
+min_date <- min(tweets$date, na.rm=TRUE)
 num_days <- as.numeric(difftime(max_date ,min_date , units = c("days")))
 slot_time <- ifelse(num_days <= 15, "hour", "day")
 ```
@@ -226,6 +273,7 @@ slot_time <- ifelse(num_days <= 15, "hour", "day")
 # Redondeamos por slot time
 tweets_df <- tweets %>%
   mutate(date = as.POSIXct(floor_date(lubridate::with_tz(date, time_zone),"sec"))) %>%
+  filter (!is.na(date)) %>%
   mutate(slot_time = as.POSIXct(floor_date(date,slot_time))) %>%
   # Para compatibilizar con t-harder_kit
   mutate(relation_ext = ifelse(relation == "quote","quoted", relation))  %>%
@@ -247,6 +295,7 @@ tweet_peak <- tweets_df %>%
   select(tweet_peak) %>%
   top_n(1) %>%
   as.integer()
+
 ```
 
 ## Resumen
@@ -274,7 +323,23 @@ Adicionalmente se etiquetan los perfilen que estén en el rango definido como in
 
 ```{r tweets_reach_total, echo=FALSE, fig.height=5, fig.width=9, message=FALSE, warning=FALSE, paged.print=FALSE}
 # Llamamos a la función tweets_vs_reach
-p <- tweets_vs_reach(tweets_df , "total",  min_date, max_date ) 
+p <- tweets_vs_reach(tweets_df, "total",  min_date, max_date, params$min_followers_influencers, params$max_overlaps ) 
+if (params$show_dates) {
+  # Anotamos los nombres
+  p <- p +
+    geom_vline(
+      data = annotations_names,
+      aes(xintercept=date),
+      linetype="dashed",
+      color = "grey50"
+    ) +
+    geom_label_repel (
+      data = annotations_names,
+      aes (x = date, y = tweet_peak * 1.4, label = paste(format(date,"%d-%m-%Y"),"\n",name)),
+      color = "grey50",
+      size = 3
+    ) 
+} 
 print(p)
 # Salvamos la gráfica en un archivo
 ggsave(paste0(img_path,base_name_file_img,"_tweets_vs_reach_total.png"))
@@ -286,7 +351,7 @@ ggsave(paste0(img_path,base_name_file_img,"_tweets_vs_reach_total.png"))
 ```{r tweets_reach_zoom, echo=FALSE, fig.height=5, fig.width=9, message=FALSE, warning=FALSE, paged.print=FALSE}
 if(params$zoom) {
   # Llamamos a la función tweets_vs_reach
-  p <- tweets_vs_reach(tweets_df , "zoom", params$date_ini_zoom, params$date_end_zoom)
+  p <- tweets_vs_reach(tweets_df, "zoom", params$date_ini_zoom, params$date_end_zoom, params$min_followers_influencers_zoom, params$max_overlaps)
   print(p)
   # Salvamos la gráfica en un archivo
   ggsave(paste0(img_path,base_name_file_img,"_tweets_vs_reach_zoom.png"))
@@ -411,11 +476,13 @@ if(params$zoom) {
 
 ## Tweets acumulados por sitio
 
-```{r spread_urls, echo=FALSE, fig.height=6, fig.width=11, message=FALSE, warning=FALSE, paged.print=FALSE}
+### Periodo total
+
+```{r spread_urls_total, echo=FALSE, fig.height=6, fig.width=11, message=FALSE, warning=FALSE, paged.print=FALSE}
 # Comprobamos que el dataset sea de una búsqueda, en streamnig no tiene ese dato
 if("retweet_count" %in% names(tweets_df)) {
   # Llamamos a la función accumulated_sites
-  p <- accumulated_sites(tweets_df, min_date, max_date)
+  p <- accumulated_sites(tweets_df, "zoom", min_date, max_date)
   print(p)
   # Salvamos la gráfica en un archivo
   ggsave(filename = paste0(img_path,base_name_file_img,"_cumulative_sites.png"))
@@ -423,9 +490,42 @@ if("retweet_count" %in% names(tweets_df)) {
 
 ```
 
+### zoom
+
+```{r spread_urls_zoom, echo=FALSE, fig.height=6, fig.width=11, message=FALSE, warning=FALSE, paged.print=FALSE}
+if(params$zoom) {
+  # Comprobamos que el dataset sea de una búsqueda, en streamnig no tiene ese dato
+  if("retweet_count" %in% names(tweets_df)) {
+    # Llamamos a la función accumulated_sites
+    p <- accumulated_sites(tweets_df, "zoom",  params$date_ini_zoom, params$date_end_zoom)
+   print(p)
+    # Salvamos la gráfica en un archivo
+    ggsave(filename = paste0(img_path,base_name_file_img,"_cumulative_sites.png"))
+  }
+}
+```
+
+# Origen de los tweets
+
+```{r origen_tweets, echo=FALSE, fig.height=5, fig.width=5, message=FALSE, warning=FALSE}
+p <-location_users(tweets_df)
+print(p)
+# Salvamos la gráfica en un archivo
+ggsave(paste0(img_path,base_name_file_img,"_locations.png"))
+
+```
+
+## Topics
+
+```{r topics_total, fig.width=9, fig.height=5}
+if (params$show_topics) {
+ p <- spread_topics_tweets(tweets_df,  min_date, max_date, topics,annotations_names)
+}
+```
+
 ## Tweets by community
 
-Los siguientes scripts visualizan la evolución temporal con ARS. **Solo se ejecutan si el parámetro ARS = TRUE**
+Los siguientes scripts visualizan la evolución temporal con ARS. **Solo se ejecutan si se han clasificado los tweets**
 
 Requiere haber realizado los pasos previos:
 
@@ -433,16 +533,56 @@ Requiere haber realizado los pasos previos:
 -   Generar un grafo con Gephi y exportar su tabla de datos
 -   Clasificar los tweets con el notebook classify_tweets.Rmd
 
-Las imágenes resultantes se almacenan en un subdirectorio del experimento llamado.
+![ciclo Análisis ARS: Evolución temporal con AR](https://github.com/congosto/congosto.github.io/raw/master/ciclo_ARS.JPG)
 
-![ciclo Análisis ARS: Evolución temporal con AR](https://github.com/congosto/congosto.github.io/raw/master/ciclo_ARS_spread.jpg)
+-   Se limita el número de comunidades a catorce, cifra que creo que es suficiente en la mayoría de los casos.
+
+-   Por compatibilidad con el análisis de ARS, se han elegido los ocho colores que Gephi asigna por defecto como lo primeros ocho colores y se han añadido seis más hasta completar los catorce.
+
+Colores por defecto:
+
+-   [#CC66FF RGB(204,102,255)]{style="color:#CC66FF"}
+-   [#92D050 RGB(146,208,80)]{style="color:#92D050"}
+-   [#00B0F0 RGB(0,176,240)]{style="color:#00B0F0"}
+-   [#404040 RGB(64,64,64)]{style="color:#404040"}
+-   [#FF9900 RGB(255,153,0)]{style="color:#FF9900"}
+-   [#FF5050 RGB(255,80,80)]{style="color:#FF5050"}
+-   [#00D67F RGB(0,214,127)]{style="color:#00D67F"}
+-   [#F8CBAD RGB(248,203,173)]{style="color:#F8CBAD"}
+-   [#8A2E00 RGB(138,46,0)]{style="color:#8A2E00"}
+-   [#993366 RGB(153,51,102)]{style="color:#993366"}
+-   [#0033CC RGB(0,51,204)]{style="color:#0033CC"}
+-   [#008E55 RGB(0,142,85)]{style="color:#008E55"}
+-   [#45682D RGB(69,104,45)]{style="color:#45682D"}
+-   [#702500 RGB(112,37,0)]{style="color:#702500"}
 
 ### Periodo total tweets-community
 
 ```{r tweets_by_community_total, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE, fig.width=9, fig.height=5}
 if(ARS == TRUE) {
   # Llamamos a la función tweets_by_community
-  p <- tweets_by_community(tweets_df , "total", min_date, max_date, communities) 
+  p <- tweets_by_community(tweets_df , "total", min_date, max_date, communities)
+  if (params$show_dates) {
+    # Anotamos los nombres
+    p <- p +
+      scale_y_continuous(
+        labels = label_number_si(),
+        limits= c(0,tweet_peak*1.2),
+        expan =c(0,0)
+      ) +
+      geom_vline(
+        data = annotations_names,
+        aes(xintercept=date),
+        linetype="dashed",
+        color = "grey50"
+      ) +
+      geom_label_repel (
+        data = annotations_names,
+        aes (x = date, y = tweet_peak * 1.1, label = paste(format(date,"%d-%m-%Y"),"\n",name)),
+        color = "grey50",
+        size = 3
+      ) 
+  } 
   print(p)
   # Salvamos la gráfica en un archivo
   ggsave(paste0(img_path,base_name_file_img,"_tweets_vs_group_total.png"))
@@ -462,9 +602,42 @@ if(ARS & params$zoom) {
 }
 ```
 
+### Periodo total tweets-block
+
+```{r tweets_by_community_total, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE, fig.width=9, fig.height=5}
+if(ARS == TRUE & params$show_blocks) {
+  # Llamamos a la función tweets_by_block
+  p <- tweets_by_blocks(tweets_df , "total", min_date, max_date, blocks)
+  if (params$show_dates) {
+    # Anotamos los nombres
+    p <- p +
+      scale_y_continuous(
+        labels = label_number_si(),
+        limits= c(0,tweet_peak*1.2),
+        expan =c(0,0)
+      ) +
+      geom_vline(
+        data = annotations_names,
+        aes(xintercept=date),
+        linetype="dashed",
+        color = "grey50"
+      ) +
+      geom_label_repel (
+        data = annotations_names,
+        aes (x = date, y = tweet_peak * 1.1, label = paste(format(date,"%d-%m-%Y"),"\n",name)),
+        color = "grey50",
+        size = 3
+      ) 
+  } 
+  print(p)
+  # Salvamos la gráfica en un archivo
+  ggsave(paste0(img_path,base_name_file_img,"_tweets_vs_group_total.png"))
+}
+```
+
 # Origen de los tweets por comunidades
 
-```{r origen_tweets_by_community, echo=FALSE, fig.height=10, fig.width=9, message=FALSE, warning=FALSE}
+```{r origen_tweets_by_community, echo=FALSE, fig.height=14, fig.width=9, message=FALSE, warning=FALSE}
 if(ARS) {
   p <-location_users_by_community(tweets_df, communities)
   print(p)
@@ -475,7 +648,7 @@ if(ARS) {
 
 # Contenido de los tweets por comunidades
 
-```{r contenido_tweets_by_community, echo=FALSE, fig.height=10, fig.width=9, message=FALSE, warning=FALSE}
+```{r contenido_tweets_by_community, echo=FALSE, fig.height=15, fig.width=9, message=FALSE, warning=FALSE}
 if(ARS) {
   p <-words_frequency_by_community(tweets_df, communities)
   print(p)
@@ -483,3 +656,5 @@ if(ARS) {
   ggsave(paste0(img_path,base_name_file_img,"_words_frequency_by_group.png"))
 }
 ```
+
+\
