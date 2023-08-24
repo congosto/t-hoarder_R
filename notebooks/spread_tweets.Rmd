@@ -6,6 +6,7 @@ params:
     base_title : "xxxxxxxxxxxx"       # Prefijo del título principal de las gráficas
     min_followers_influencers: 100000 # Mínimo de followers de un perfil para ser etiquetado
     time_zone: "Europe/Berlin"        # Huso horario
+    max_overlaps: 50                  # parámetro para ajustar el text_repel
     zoom: FALSE                        # (TRUE/FALSE) TRUE si se desea hacer zoom 
     date_ini_zoom: "YYYY-MM-DD"       # (Solo si zoom es TRUE) Fecha de inicio del zoom, formato YYYY-MM-DD 
     date_end_zoom: "YYYY-MM-DD"       # (Solo si zoom es TRUE) Fecha de inicio del zoom, formato YYYY-MM-DD
