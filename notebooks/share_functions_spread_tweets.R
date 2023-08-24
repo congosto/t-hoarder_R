@@ -45,7 +45,7 @@ Summary_tweets <- function(df) {
 # Chart line de doble escala del total tweets vs alcance de los mismos
 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-tweets_vs_reach <- function(df, periodo,  ini_date, end_date) {
+tweets_vs_reach <- function(df, periodo,  ini_date, end_date, min_followers_influencers, max_overlaps) {
   # Si es zoom, acotamos el tiempo
   if (periodo == "zoom"){
     df <- df %>% 
@@ -66,13 +66,16 @@ tweets_vs_reach <- function(df, periodo,  ini_date, end_date) {
     group_by(slot_time) %>%
     summarise(
       reach = sum(followers, na.rm = T),
-      influencer = ifelse(followers >= params$min_followers_influencers, author, NA),
+      influencer = ifelse(followers >= min_followers_influencers, author, NA),
       relation_ext = relation_ext,
       .groups = 'drop'
     ) %>%
     ungroup() %>%
-    filter (!is.na (influencer)) %>%
-    distinct(slot_time, reach, influencer,relation_ext)
+    filter (!is.na(influencer)) %>%
+    group_by (slot_time,influencer) %>%
+    slice(1) %>%
+    ungroup()
+    
   # Calculamos las dos escalas
   max_tweets <- max(tweets_vs_reach_df$num_tweets,na.rm = TRUE)
   max_reach <- max(tweets_vs_reach_df$reach,na.rm = TRUE)
@@ -98,16 +101,16 @@ tweets_vs_reach <- function(df, periodo,  ini_date, end_date) {
       size =1.2) +
     # Pintamos los influencers
     geom_text_repel(
-      data =tweets_vs_influencer_df,
+      data = tweets_vs_influencer_df,
       aes(
         x = slot_time,
         y = reach/ajuste_escala,
         label = influencer,
         color = relation_ext
       ), 
-      ylim = c(0, limit_y*2),
+      ylim = c(0, limit_y*1.5),
       force = 10,
-      max.overlaps = 30,
+      max.overlaps = max_overlaps,
       max.time = 10,
       size = 3.5,
       vjust = .5
@@ -121,7 +124,7 @@ tweets_vs_reach <- function(df, periodo,  ini_date, end_date) {
     scale_y_continuous(
       name = paste("Num. Tweets per",slot_time), 
       labels = label_number_si(),
-      limits= c(0,limit_y*2 ),
+      limits= c(0,limit_y*1.5 ),
       expand= c(0,0),
       sec.axis = sec_axis(
         trans=(~ . * ajuste_escala), 
@@ -130,20 +133,19 @@ tweets_vs_reach <- function(df, periodo,  ini_date, end_date) {
       )
     ) +
     # Aplicamos color
-    scale_color_manual(
-      values = color_relation,
-      labels = paste(
-        "<span style='color:",
-         color_relation,
-         "'>",
-         order_relation,
+   scale_color_manual(
+     values = color_relation,
+    labels = paste(
+       "<span style='color:",
+      color_relation,
+       "'>",
+        order_relation,
          "(",
          summary_tweets$percent,
          "%)",
-         "</span>"),
-      drop = FALSE
-    ) +
-    # Ponemos los títulos
+         "</span>")
+   ) +
+  # Ponemos los títulos
     labs(
       title = paste(base_title, ": Tweets per",slot_time, "vs. Reach"),
       subtitle = paste(
@@ -165,7 +167,6 @@ tweets_vs_reach <- function(df, periodo,  ini_date, end_date) {
       axis.text.y = element_text(color = "steelblue4"),
       axis.text.y.right = element_text(color = "red4")
     )
-  
   return(p)
 }
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -313,10 +314,10 @@ tweets_by_lang <- function(df, periodo,  ini_date, end_date) {
     "de" = "#005426",
     "pt" = "#FF9933",
     "it" = "#00B050",
-    "und" = "#808080",
+    "und" = "#FF9E00",
     "qme" = "#808080",
-    "zxx" = "#808080",
-    "qht" = "#808080"
+    "zxx" = "#9309ff",
+    "qht" = "#FF00E0"
   )
   # Calculamos el top de lenguajes
   top_lang_df <- df %>%
@@ -480,7 +481,7 @@ tweets_by_HT <- function(df, periodo,  ini_date, end_date) {
 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 tweets_by_community <-  function(df, periodo,  ini_date, end_date, communities) {
-  # Si es zoom, acotamos el tiempo
+  # Si es zoom, acortamos el tiempo
   if (periodo == "zoom"){
     df <- df %>% 
       filter(date >= ini_date & date <= end_date)
@@ -543,12 +544,86 @@ tweets_by_community <-  function(df, periodo,  ini_date, end_date, communities) 
 }
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 #
+# tweets_by_blocks 
+#
+# Bar line desglosado por grupos o comunidades
+#
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+tweets_by_blocks <-  function(df, periodo,  ini_date, end_date, blocks) {
+  # Si es zoom, acotamos el tiempo
+  if (periodo == "zoom"){
+    df <- df %>% 
+      filter(date >= ini_date & date <= end_date)
+  }
+  top_community <- blocks$community
+  top_community_names <- blocks$name_community
+  top_community_color <- blocks$color
+  # Seleccionamos las comunidades del top
+  tweets_communities_df <- df %>% 
+    filter(community %in%  top_community) %>%
+    #agrupamos por comunidad y contamos cuantos tweets hay en cada una de ellas en cada hora
+    group_by(slot_time,community) %>%
+    summarise(
+      num_tweets = n(),
+      .groups ="drop" )%>%
+    ungroup()
+  # Ordenamos las comunidades como aparecen en el fichero
+  tweets_communities_df$community <- factor(tweets_communities_df$community, levels = top_community)
+  # Generamos la gráfica por comunidades
+  p <- ggplot(tweets_communities_df) + 
+    # Pintamos la evolución por comunidades
+    geom_col(
+      aes(x = slot_time, y = num_tweets, fill = community),
+      alpha = 0.7
+    )+
+    # Ponemos los títulos
+    labs(
+      title =paste(base_title, ": Tweets by block"),
+      x = "",
+      y = paste("Num tweets per",slot_time),
+      fill = "Groups"
+    ) +
+    # Ajustamos la escala de tiempo
+    scale_x_datetime(
+      date_labels = format_time(ini_date, end_date),
+      date_breaks = time_scale(ini_date, end_date)
+    ) +
+    # Ajustamos el eje y
+    scale_y_continuous(
+      limits= c(0,tweet_peak*1.1),
+      expand= c(0,0),
+      labels = label_number_si()
+    ) +
+    #coloreamos según el fichero
+    scale_fill_manual(
+      values = top_community_color,
+      labels = top_community_names
+    ) +
+    # Aplicamos template
+    my_theme() +
+    theme(
+      legend.position="right",
+      legend.key.size = unit(0.4, 'cm'),
+      axis.title.y = element_text(vjust = +4),
+      panel.grid.major.x = element_blank(),
+      axis.ticks.x = element_line(),
+      legend.text = element_text(size=11)
+    ) 
+  return(p)
+}
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+#
 # accumulated_sites
 #
 # Char line acumulado de los sitios referenciados en los tweets
 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-accumulated_sites <-  function(df, ini_date, end_date) {
+accumulated_sites <-  function(df, periodo, ini_date, end_date) {
+  # Si es zoom, acortamos el tiempo
+  if (periodo == "zoom"){
+    df <- df %>% 
+      filter(date >= ini_date & date <= end_date)
+  }
   df <- df %>%
     filter(relation != "RT" | is.na(relation)) %>%
     mutate(site = str_extract(urls,"https://[www]*[.\\w-]*"))  %>%
@@ -596,7 +671,7 @@ accumulated_sites <-  function(df, ini_date, end_date) {
       ), 
       vjust = 1,
       size = 4,
-      nudge_x =  expand_time(min_date,max_date, 10), # Ajuste eje x
+      nudge_x =  expand_time(min_date,max_date, 2), # Ajuste eje x
       nudge_y = 0.005,  # Ajuste eje y
       direction = "y",
       max.overlaps = 30,
@@ -625,6 +700,62 @@ accumulated_sites <-  function(df, ini_date, end_date) {
     theme( legend.position="top")
   return(p)
 }
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+#
+# location_users
+#
+# Word cloud de las localizaciones de los autores en una rejilla por grupo
+#
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+location_users <- function(df ) {
+  # Obtenemos las stop words en Inglés, español y catalán
+  custom_stop_words <- bind_rows(
+    stop_words,
+    data_frame(word = tm::stopwords("spanish"),lexicon = "custom"),
+    data_frame(word = tm::stopwords("catalan"),lexicon = "custom")
+  )
+  # Extraemos el corpus de texto de la columna "location" para generar el wordcloud 
+  corpus_text <- tweets_df %>%
+    # Seleccionamos la columna location
+    select(location) %>%
+    unnest_tokens(word, location) %>% # Convertimos las frases en un conjunto de palabras
+    anti_join(custom_stop_words) %>% # Eliminamos las stop words
+    filter(!is.na(word)) %>% #eliminamos lo valores nulos
+    group_by(word) %>% # Agrupamos por palabras   
+    summarise(
+      freq = n(),   # Obtenemos la frecuencia de cada palabra
+      .groups = "drop"
+    ) %>% 
+    ungroup() %>%
+    arrange(desc(freq)) %>% # Ordenamos de mayor a menor frecuencia de aparición
+    top_n(n = 50, freq)  # Obtenemos las 50 localizaciones más frecuentes de cada comunidad
+  # Generamos los colores para las palabras según frecuencia
+  paleta <- brewer.pal(8, "Dark2")
+  # Pintamos la nube de palabras
+  p <- ggplot() +
+    # Dibujamos la nube de palabras
+    geom_text_wordcloud_area(
+      data = corpus_text,
+      aes(label = word, size = freq, color = freq),
+      angle = 0.35
+    ) +
+    # Definimos la proporción del tamaño de las letras según frecuencia
+    geom_text_wordcloud_area(rm_outside = TRUE) +
+    geom_text_wordcloud_area(area_corr_power = 1) +
+    scale_radius(range = c(4, 20), limits = c(0, NA)) +
+    # Aplicamos una paleta de color
+    scale_color_gradientn(colors = paleta) +
+    # Definimos el título principal y el de los ejes
+    labs(
+      title = paste(base_title,": Locations"),
+      x = "", y = "",
+      color=""
+    ) +
+    # Aplicamos un template minimalista
+    my_theme() 
+  return(p)
+}
+
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 #
 # location_users_by_community
@@ -776,4 +907,215 @@ words_frequency_by_community <- function(df, communities ) {
     my_theme() +
     theme(strip.text = element_text(color  = "white"))
   return(p)
+}
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+#
+# spread_topics_tweets
+#
+# line chart acumulativo
+#
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+spread_topics_tweets <- function(df, ini_date, end_date, topics, annotations_names){
+   # extraemos los topics
+  first_time <- TRUE
+  for (topic in topics) {
+    aux_df <- df %>%
+    filter(str_detect (tolower(text), tolower(topic))) %>%
+    mutate (topic = topic)
+    if (first_time == TRUE){
+      topics_df <- aux_df
+      first_time <- FALSE
+    }else{
+      topics_df <- rbind (topics_df,aux_df)
+    }
+  } 
+  topics_df <- topics_df %>%
+    group_by(topic, slot_time) %>%
+    summarise(nun_topics = n()) %>%
+    mutate(cumulative_sum = cumsum(nun_topics))
+  visible_dates <- as.POSIXct(seq(ini_date, end_date, by = time_scale(ini_date, end_date)) )
+  limit_x = as.POSIXct(c(ini_date, end_date + ( expand_time(ini_date, end_date, 50))))
+  limit_y =  max(topics_df$cumulative_sum) 
+  p <- ggplot() + 
+    geom_line(
+      data = topics_df, 
+      aes(
+        x = slot_time,
+        y = cumulative_sum,
+        color = topic
+      ),
+      show.legend =FALSE,
+      size =1, alpha  = 0.7)+
+    geom_text_repel(
+      data = topics_df %>% 
+        top_n(1, cumulative_sum),
+      aes(
+        x = slot_time, y = cumulative_sum, color = topic,
+        label = paste0(
+          topic,
+          "(",
+          format(cumulative_sum, big.mark=".",decimal.mark=","),
+          " ref.)")
+      ), 
+      vjust = 1,
+      size = 4,
+      nudge_x =  expand_time(min_date,max_date, 10), # Ajuste eje x
+      nudge_y = 0.005,  # Ajuste eje y
+      direction = "y",
+      max.overlaps = 30,
+      segment.size = 0.5,
+      segment.linetype = 2,
+      show.legend =FALSE
+    )+
+    scale_x_datetime(
+      limits=limit_x,
+      breaks = visible_dates,
+      date_labels = format_time(ini_date, end_date)
+    ) +
+    scale_y_continuous(
+      labels = label_number_si(),
+      limits= c(0,limit_y*1.3 ),
+      expand= c(0,0)
+    ) +
+    labs(
+      title = paste0(base_title,": Topics"),
+      x = "",
+      y = "Num. accumulated topics per day",
+      color = ""
+    ) +
+    my_theme() +
+    theme(
+      legend.position="top"
+    )
+    if (params$show_dates) {
+      p <- p +
+        geom_vline(
+          data = annotations_names,
+          aes(xintercept=date),
+          linetype="dashed",
+          color = "grey50"
+        ) +
+        geom_label_repel (
+          data = annotations_names,
+          aes (x = date, y = limit_y*1.1, label = name),
+          color = "grey50"
+        )
+  }
+  return (p)
+}
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+#
+# spread_topics_tweets_by community
+#
+# line chart acumulativo
+#
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+spread_topics_tweets_by_community <- function(df, ini_date, end_date, communities, topics, annotations_names){
+  # Ordenamos por comunidad de más a menos miembros
+  top_community <- communities$community
+  top_community_color <- communities$color
+  communities$name_community <- factor(communities$name_community,levels = communities$name_community )
+  # extraemos los topics
+  first_time <- TRUE
+  for (topic in topics) {
+    aux_df <- df %>%
+      filter(str_detect (tolower(text), tolower(topic))) %>%
+      mutate (topic = topic)
+    if (first_time == TRUE){
+      topics_df <- aux_df
+      first_time <- FALSE
+    }else{
+      topics_df <- rbind (topics_df,aux_df)
+    }
+  } 
+  x <- topics_df %>%
+    left_join(communities, by  = "community") 
+  print (x)
+  topics_df <- topics_df %>%
+    left_join(communities, by  = "community") %>%
+    filter (!is.na(name_community)) %>%
+    arrange (name_community, topic, slot_time) %>%
+    group_by(name_community, topic, slot_time) %>%
+    summarise(nun_topics = n()) %>%
+    mutate(cumulative_sum = cumsum(nun_topics))
+
+  strip <- strip_themed(
+    background_x = elem_list_rect(
+      fill = top_community_color,
+      color  = top_community_color
+    )
+  )
+  visible_dates <- as.POSIXct(seq(ini_date, end_date, by = time_scale(ini_date, end_date)) )
+  limit_x = as.POSIXct(c(ini_date, end_date + ( expand_time(ini_date, end_date, 50))))
+  limit_y =  max(topics_df$cumulative_sum) 
+  p <- ggplot() + 
+    geom_line(
+      data = topics_df, 
+      aes(
+        x = slot_time,
+        y = cumulative_sum,
+        color = topic
+      ),
+      show.legend =FALSE,
+      size =1, alpha  = 0.7)+
+    geom_text_repel(
+      data = topics_df %>% 
+        top_n(1, cumulative_sum),
+      aes(
+        x = slot_time, y = cumulative_sum, color = topic,
+        label = paste0(
+          topic,
+          "(",
+          format(cumulative_sum, big.mark=".",decimal.mark=","),
+          " ref.)")
+      ), 
+      vjust = 1,
+      size = 4,
+      nudge_x =  expand_time(min_date,max_date, 10), # Ajuste eje x
+      nudge_y = 0.005,  # Ajuste eje y
+      direction = "y",
+      max.overlaps = 30,
+      segment.size = 0.5,
+      segment.linetype = 2,
+      show.legend =FALSE
+    )+
+    scale_x_datetime(
+      limits=limit_x,
+      breaks = visible_dates,
+      date_labels = format_time(ini_date, end_date)
+    ) +
+    scale_y_continuous(
+      labels = label_number_si(),
+      limits= c(0,limit_y*1.3 ),
+      expand= c(0,0)
+    ) +
+    labs(
+      title = paste0(base_title,": Topics"),
+      x = "",
+      y = "Num. accumulated topics per day",
+      color = ""
+    ) +
+    # Desdoblamos la gráfica según el periodo previo o posterior de la compra
+    facet_wrap2(~name_community, ncol = 1, strip = strip, scales="free" ) +
+    my_theme() +
+    theme(legend.position="top") +
+    theme(strip.text = element_text(color  = "white"))
+  if (params$show_dates) {
+    p <- p +
+      geom_vline(
+        data = annotations_names,
+        aes(xintercept=date),
+        linetype="dashed",
+        color = "grey50"
+      ) +
+      geom_label_repel (
+        data = annotations_names,
+        aes (x = date, y = limit_y*1.1, label = name),
+        color = "grey50"
+      )
+  }
+  return (p)
 }
