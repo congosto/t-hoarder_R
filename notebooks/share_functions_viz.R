@@ -6,7 +6,7 @@
 # Plantilla para las gráficas
 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-my_theme <- function(base_size = 11){
+my_theme <- function(base_size = 10){
   # Establecemos la proporción del tamaño de la letra de cada uno de los elementos
   template <- 
     theme_bw() +  # tema minimalista de fondo blanco
@@ -22,8 +22,8 @@ my_theme <- function(base_size = 11){
         l = 6
       ),
       text = element_text(size=base_size + 2),
-      axis.text.x=element_text(size=base_size),
-      axis.text.y=element_text(size=base_size),
+      axis.text.x=element_text(size=base_size - 1),
+      axis.text.y=element_text(size=base_size -1),
       axis.title.x=element_text(
         size=base_size + 2,
         margin = unit(c(3, 0, 0, 0), "mm")
@@ -64,7 +64,8 @@ time_scale <- function(ini_date,end_date) {
     num_months >= 12 ~ paste(as.integer((num_months+12)/12), "months"),
     num_weeks >= 25 ~ paste(as.integer((num_weeks+7)/7), "weeks"),
     num_days >= 4 ~ paste(as.integer((num_days+10)/10), "days"),
-    num_hours >= 0 ~ paste(as.integer((num_hours+6)/6), "hours") 
+    num_days >= 2 ~ paste(as.integer((num_hours+20)/20), "hours"),
+    num_hours >= 0 ~ paste(as.integer((num_hours+14)/14), "hours") 
 ) 
   return(spaced_dates)
 }
