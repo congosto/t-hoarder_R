@@ -1,0 +1,93 @@
+---
+title: "Convertir un  fichero de t-hoarder_kit a t-hoarder_R "
+output:
+  html_document:
+    df_print: paged
+params:
+    dataset_name : "xxxxxxxxx"            # Nombre del dataset
+---
+
+```{r setup, 	echo = TRUE,message = FALSE,	warning = FALSE,include=FALSE, cache = FALSE}
+
+require("knitr")
+## setting working directory
+opts_knit$set(root.dir = "./")
+```
+
+## Entorno de trabajo
+
+Estos notebooks trabajan con esta estructura de directorios
+
+```         
+dir_raiz ----+-----datos      # Se guardan los datos, cada dataset en un directorio independiente
+             |
+             +-----keys      # se guardan los ficheros con las claves de acceso. 
+             |
+             +-----notebooks # Se guardan los notebook en R
+             
+```
+## Importamos librerias
+
+```{r libraries}
+if(!"tidyverse" %in% installed.packages()) {install.packages("tidyverse")}
+library(tidyverse)        # Manejo de datos y gráficas
+```
+
+## Importamos funciones
+
+```{r functions}
+source("share_functions.R")              # Funciones generales
+```
+
+## Entorno por defecto
+
+```{r environment}
+## Entorno por defecto. No tocar salvo que se quiera usar otro entorno
+dataset_name <- params$dataset_name    # Nombre del dataset
+data_path <- paste0("../datos/", dataset_name, "/") # Directorio de datos
+name_file_in <- paste0(data_path,dataset_name,".txt")
+name_file_out <- paste0(data_path,dataset_name,".csv")
+
+
+```
+
+## Leer los datos y convertir a dataframe
+
+```{r read_data, warning=FALSE}
+file_tweets <- paste0(name_file_in)
+tweets <- readLines(name_file_in) %>%
+  strsplit ("\n") %>%  
+  str_split_fixed( "\t", n=Inf) 
+names <- tweets[1,]
+tweets <- tweets[-1,]
+tweets_df <- as.data.frame(tweets)
+colnames(tweets_df) <- names
+tweets_df <- replace( tweets_df, tweets_df == "None", NA)
+
+
+```
+
+## Cambiamos las cabeceras para t-hoarder_R
+
+```{r normalizar cabeceras}
+
+tweets_df <- tweets_df %>%
+  rename (
+    id_tweet = `id tweet`,
+    id_user = `id user`,
+    statuses = stauses,
+    type_media = `type media`,
+    user_replied = `user replied`,
+    user_retweeted = `user retweeted`,
+    user_quoted = `user quoted`,
+    first_HT = `first HT`
+  ) 
+
+```
+
+## Guardar csv
+
+```{r write_csv}
+write_csv(tweets_df,name_file_out)
+```
+
