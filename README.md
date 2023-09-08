@@ -17,7 +17,7 @@ Estos **notebooks** trabajan con esta estructura de directorios prefijada.
 Los cuadernos para acceder a los datos (data) y las claves (keys) lo hacen de manera relativa al directorio dónde está el cuaderno. Aunque está configurado que el directorio de trabajo sea el del cuaderno, no siempre funciona. En el caso de que no encuentre los datos se debe configurar "Session / Set Working Directory / To Source File Location".
 
 ```         
-dir_raiz ----+-----data      # Se guardan los datos, cada dataset en un directorio independiente
+dir_raiz ----+-----datos      # Se guardan los datos, cada dataset en un directorio independiente
              |
              +-----keys      # se guardan los ficheros con las claves de acceso. 
              |
